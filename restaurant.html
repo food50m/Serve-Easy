@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Panel</title>
+    <style>
+        :root { --primary: #ff4d4d; --bg: #f8fafc; }
+        body { font-family: sans-serif; background: var(--bg); padding: 20px; margin: 0; }
+        .container { max-width: 600px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid var(--primary); }
+        .row { display: flex; justify-content: space-between; align-items: center; }
+        .btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        select { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; }
+        /* Style for Menu Management */
+        .menu-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav-tabs button { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; }
+        .active-tab { background: var(--primary); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="login-box" class="card">
+            <h2 style="text-align:center;">Restaurant Login</h2>
+            <input id="u" placeholder="Username" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
+            <input id="p" type="password" placeholder="Password" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #ddd;">
+            <button class="btn" onclick="login()">Login</button>
+        </div>
+
+        <div id="panel" style="display:none;">
+            <div class="nav-tabs">
+                <button id="tab-orders" class="active-tab" onclick="switchTab('orders')">Orders</button>
+                <button id="tab-menu" onclick="switchTab('menu')">Manage Menu</button>
+            </div>
+
+            <div id="orders-section">
+                <div class="row"><h2>Orders</h2><button onclick="loadOrders()" style="padding:5px 15px;">Refresh</button></div>
+                <div id="list"></div>
+            </div>
+
+            <div id="menu-section" style="display:none;">
+                <div class="card">
+                    <h3>Add New Item</h3>
+                    <input id="m_name" placeholder="Item Name" style="width:90%; padding:8px; margin-bottom:5px;">
+                    <input id="m_price" type="number" placeholder="Price" style="width:90%; padding:8px; margin-bottom:10px;">
+                    <button class="btn" onclick="addMenuItem()">Add to Menu</button>
+                </div>
+                <div id="menu-list" class="card">Loading Menu...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = "https://script.google.com/macros/s/AKfycbw-LmdGMwxHNBoRL_Zpvgzag7GkboaetJy8i5NmePCIphxIzOH7Wk1OFWXaxWnLuoVZ/exec";
+        let rid = null;
+
+        function login() {
+            const username = document.getElementById("u").value.toLowerCase();
+            const password = document.getElementById("p").value;
+            fetch(API, { method: "POST", body: JSON.stringify({ action: "loginRestaurant", username, password }) })
+            .then(r => r.json()).then(d => {
+                if(!d.success) return alert("Fail");
+                rid = d.restaurant_id;
+                document.getElementById("login-box").style.display="none";
+                document.getElementById("panel").style.display="block";
+                loadOrders(); setInterval(loadOrders, 30000);
+            });
+        }
+
+        function switchTab(tab) {
+            document.getElementById('orders-section').style.display = tab === 'orders' ? 'block' : 'none';
+            document.getElementById('menu-section').style.display = tab === 'menu' ? 'block' : 'none';
+            document.getElementById('tab-orders').className = tab === 'orders' ? 'active-tab' : '';
+            document.getElementById('tab-menu').className = tab === 'menu' ? 'active-tab' : '';
+            if(tab === 'menu') loadMenu();
+        }
+
+        function loadOrders() {
+            fetch(API, { method: "POST", body: JSON.stringify({ action: "getOrders", restaurant_id: rid }) })
+            .then(r => r.json()).then(orders => {
+                const list = document.getElementById("list");
+                list.innerHTML = orders.length ? "" : "No orders";
+                orders.forEach(o => {
+                    list.innerHTML += `
+                    <div class="card">
+                        <div class="row"><small>#${o.order_id}</small><b style="color:var(--primary);">₹${o.total_price}</b></div>
+                        <div><b>${o.customer_name}</b></div>
+                        <div style="color:#3b82f6;">📞 ${o.customer_phone}</div>
+                        <div style="font-size:13px; margin:10px 0; background:#f1f5f9; padding:8px;">${o.items}</div>
+                        <select onchange="updateStatus('${o.order_id}', this.value)">
+                            <option value="Pending" ${o.status=='Pending'?'selected':''}>⏳ Pending</option>
+                            <option value="Accepted" ${o.status=='Accepted'?'selected':''}>✅ Accepted</option>
+                            <option value="Preparing" ${o.status=='Preparing'?'selected':''}>👨‍🍳 Preparing</option>
+                            <option value="Ready" ${o.status=='Ready'?'selected':''}>📦 Ready</option>
+                            <option value="Completed" ${o.status=='Completed'?'selected':''}>🏁 Completed</option>
+                            <option value="Cancelled" ${o.status=='Cancelled'?'selected':''}>❌ Cancelled</option>
+                        </select>
+                    </div>`;
+                });
+            });
+        }
+
+        function updateStatus(id, s) {
+            fetch(API, { method: "POST", body: JSON.stringify({ action: "updateStatus", order_id: id, status: s, restaurant_id: rid }) })
+            .then(() => loadOrders());
+        }
+
+        // --- NEW MENU MANAGEMENT FUNCTIONS ---
+
+       
+
+        function addMenuItem() {
+            const name = document.getElementById("m_name").value;
+            const price = document.getElementById("m_price").value;
+            fetch(API, { method: "POST", body: JSON.stringify({ action: "addMenuItem", restaurant_id: rid, name, price }) })
+            .then(() => { loadMenu(); document.getElementById("m_name").value=""; document.getElementById("m_price").value=""; });
+        }
+
+        function toggleItem(name, status) {
+            fetch(API, { method: "POST", body: JSON.stringify({ action: "toggleMenuItem", restaurant_id: rid, name, enabled: status }) })
+            .then(() => loadMenu());
+        }
+
+        function deleteItem(name) {
+            if(confirm("Delete " + name + "?")) {
+                fetch(API, { method: "POST", body: JSON.stringify({ action: "deleteMenuItem", restaurant_id: rid, name }) })
+                .then(() => loadMenu());
+            }
+        }
+		
+		
+		
+function loadMenu() {
+    fetch(API, { method: "POST", body: JSON.stringify({ action: "getMenu", restaurant_id: rid }) })
+    .then(r => r.json()).then(menu => {
+        const mList = document.getElementById("menu-list");
+        mList.innerHTML = "<h3>Current Menu</h3>";
+        menu.forEach(item => {
+            // Using item.status to match your Apps Script logic
+            const isAvailable = String(item.status).toLowerCase() === 'yes';
+            mList.innerHTML += `
+            <div class="menu-item">
+                <span>${item.name} - ₹${item.price}</span>
+                <div>
+                    <button onclick="updatePrice('${item.name}', '${item.price}')">✏️ Edit</button>
+                    <button onclick="toggleItem('${item.name}', '${isAvailable ? 'NO' : 'YES'}')">
+                        ${isAvailable ? '✅ Available' : '❌ Off'}
+                    </button>
+                    <button style="color:red" onclick="deleteItem('${item.name}')">🗑️</button>
+                </div>
+            </div>`;
+        });
+    });
+}
+
+//edit menu 
+		// Function to prompt for a new price and send it to Apps Script
+async function updatePrice(itemName, currentPrice) {
+    const newPrice = prompt(`Enter new price for ${itemName}:`, currentPrice);
+    if (newPrice === null || newPrice === "" || isNaN(newPrice)) return;
+
+    try {
+        const response = await fetch(API, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "editMenuItem",
+                restaurant_id: rid,
+                name: itemName,
+                new_price: parseFloat(newPrice)
+            })
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert("Price updated!");
+            loadMenu(); 
+        }
+    } catch (e) { console.error(e); }
+}
+    </script>
+</body>
+</html>
