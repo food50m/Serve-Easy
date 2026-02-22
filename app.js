@@ -276,19 +276,30 @@ function openMenu(id, name) {
         out.innerHTML = `<div style="text-align:center; padding:50px;"><p style="color:red;">Error loading menu.</p><button onclick="openMenu('${id}', '${name}')">Retry</button></div>`;
     });
 }
-
+// -------------------------------
+// 6.RENDER MENU FUCTION 
+// -------------------------------
 function renderMenuItems(hotelName, items) {
     const out = document.getElementById("out");
     let html = `<div style="text-align:center; padding: 10px;"><h2 style="color: var(--primary);">${hotelName}</h2></div>`;
     
     items.forEach(item => {
-        const isSoldOut = item.status && item.status.toLowerCase() === "sold out";
-        const isBestSeller = item.status && item.status.toLowerCase() === "best seller";
+        // --- NEW LOGIC START ---
+        const status = (item.status || "").toLowerCase();
+        const isSoldOut = status === "sold out";
+        const isOff = status === "off" || status === "no"; // Added check for "off" or "no"
+        const isNotAvailable = isSoldOut || isOff;
+        
+        const isBestSeller = status === "best seller";
+        // --- NEW LOGIC END ---
+
         const safeName = item.name.replace(/'/g, "\\'");
-        const rowStyle = isSoldOut ? "background: #f8fafc; opacity: 0.6; filter: grayscale(0.5);" : "background: white;";
+        
+        // Grey out the row if it's sold out OR set to off
+        const rowStyle = isNotAvailable ? "background: #f1f5f9; opacity: 0.6; filter: grayscale(0.8);" : "background: white;";
 
         html += `
-            <div class="restaurant" style="${rowStyle} border-left: 4px solid ${isSoldOut ? '#94a3b8' : 'var(--primary)'}; margin-bottom: 12px; padding: 15px; border-radius: 12px;">
+            <div class="restaurant" style="${rowStyle} border-left: 4px solid ${isNotAvailable ? '#cbd5e1' : 'var(--primary)'}; margin-bottom: 12px; padding: 15px; border-radius: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items:center;">
                     <div style="flex: 1;">
                         <div style="display: flex; align-items: center; gap: 8px;">
@@ -296,11 +307,14 @@ function renderMenuItems(hotelName, items) {
                             ${isBestSeller ? '<span style="background:#fef3c7; color:#92400e; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; border:1px solid #fcd34d;">⭐ BEST SELLER</span>' : ''}
                         </div>
                         <div style="font-size: 0.8rem; color: gray; margin-top: 4px;">${item.category || ''}</div>
-                        <div style="font-weight: 800; margin-top: 4px;">${isSoldOut ? '<span style="color:#64748b">SOLD OUT</span>' : '₹' + item.price}</div>
+                        <div style="font-weight: 800; margin-top: 4px;">
+                            ${isNotAvailable ? '<span style="color:#94a3b8">NOT AVAILABLE</span>' : '₹' + item.price}
+                        </div>
                     </div>
                     <div>
-                        ${isSoldOut ? 
-                            `<button style="background:#cbd5e1; color:white; border:none; padding:10px 16px; border-radius:12px; cursor:not-allowed;">❌</button>` : 
+                        ${isNotAvailable ? 
+                            // This button is disabled and does nothing when clicked
+                            `<button style="background:#cbd5e1; color:white; border:none; padding:10px 16px; border-radius:12px; cursor:not-allowed;">OFF</button>` : 
                             `<button onclick="addToCart('${item.item_id}', '${safeName}', ${item.price})" style="background:var(--primary); color:white; border:none; padding:10px 18px; border-radius:12px; cursor:pointer; font-weight:bold;">ADD +</button>`
                         }
                     </div>
@@ -337,4 +351,5 @@ navigator.geolocation.getCurrentPosition(
     pos => { userLat = pos.coords.latitude; userLng = pos.coords.longitude; loadRestaurants(); },
     () => { loadRestaurants(); },
     { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+
 );
