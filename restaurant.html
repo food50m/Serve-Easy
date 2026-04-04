@@ -49,6 +49,14 @@
             </div>
         </div>
     </div>
+	 // --- NEWLY ADDED ---
+	<div class="card">
+  <h3>Restaurant Visibility</h3>
+  <label>
+    <input type="checkbox" id="toggle-visibility" onchange="toggleRestaurantVisibility(this.checked)">
+   Close Restaurant
+  </label>
+</div>
 
     <script>
         const API = "https://script.google.com/macros/s/AKfycbw-LmdGMwxHNBoRL_Zpvgzag7GkboaetJy8i5NmePCIphxIzOH7Wk1OFWXaxWnLuoVZ/exec";
@@ -176,6 +184,41 @@ async function updatePrice(itemName, currentPrice) {
         }
     } catch (e) { console.error(e); }
 }
+		function toggleRestaurantVisibility(isHidden) {
+  // 'YES' means visible, 'NO' means hidden for API logic
+  const status = isHidden ? 'NO' : 'YES'; 
+  fetch(API, {
+    method: "POST",
+    body: JSON.stringify({ 
+      action: "toggleRestaurant", 
+      restaurant_id: rid, 
+      enabled: status 
+    })
+  })
+  .then(res => res.json())
+  .then(d => {
+    if(d.success) {
+      alert(`Restaurant is now ${isHidden ? "hidden" : "visible"} to customers.`);
+    } else {
+      alert("Failed to update visibility.");
+    }
+  });
+}
+		function loadRestaurantSettings() {
+  fetch(API, {
+    method: "POST",
+    body: JSON.stringify({ action: "getRestaurant", restaurant_id: rid })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if(res.enabled) {
+      document.getElementById("toggle-visibility").checked = res.enabled !== "YES";
+    }
+  });
+}
+
+// Call after login
+login().then(() => loadRestaurantSettings());
     </script>
 </body>
 </html>
