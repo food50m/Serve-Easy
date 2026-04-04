@@ -49,12 +49,12 @@
             </div>
         </div>
     </div>
-	 // --- NEWLY ADDED ---
-	<div class="card">
+	 <!-- Hide this initially -->
+<div id="visibility-card" class="card" style="display:none; margin-top: 20px;">
   <h3>Restaurant Visibility</h3>
   <label>
     <input type="checkbox" id="toggle-visibility" onchange="toggleRestaurantVisibility(this.checked)">
-   Close Restaurant
+    Close Restaurant
   </label>
 </div>
 
@@ -71,7 +71,11 @@
                 rid = d.restaurant_id;
                 document.getElementById("login-box").style.display="none";
                 document.getElementById("panel").style.display="block";
+				 // Show visibility toggle only after login:
+        document.getElementById("visibility-card").style.display = "block";
                 loadOrders(); setInterval(loadOrders, 30000);
+				 // <-- Add this call here
+        loadRestaurantSettings();
             });
         }
 
@@ -218,7 +222,7 @@ async function updatePrice(itemName, currentPrice) {
 }
 
 // Call after login
-login().then(() => loadRestaurantSettings());
+//login().then(() => loadRestaurantSettings());
     </script>
 </body>
 </html>
