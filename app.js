@@ -181,18 +181,7 @@ function placeFinalOrder() {
             const waMessage = window.encodeURIComponent(
                 `*NEW ORDER RECEIVED*\n--------------------------\n*Order ID:* ${res.order_id}\n*Customer:* ${name}\n*Items:* ${itemsString}\n*Total:* ₹${totalAmount}\n*Payment:* ${payMode}\n*Notes:* ${note || 'None'}\n--------------------------\n${payInstruction}`
             );
-
-            out.innerHTML = `
-                <div style="text-align:center; padding:30px;">
-                    <div style="font-size: 60px; margin-bottom: 15px;">✅</div>
-                    <h2 style="color: #22c55e;">To confirm order notify on whatsapp</h2>
-                    <p style="color: #64748b;">Click below to send order:</p>
-                    <a href="https://wa.me/${hotelWhatsApp}?text=${waMessage}" target="_blank"
-                       style="display:block; text-decoration:none; background:#25D366; color:white; padding:18px; border-radius:15px; font-weight:800; font-size:1.1rem; margin-top:20px;">
-                       NOTIFY ON WHATSAPP 💬
-                    </a>
-                    
-                </div>`;
+showPaymentForm(res.order_id, totalAmount, hotelWhatsApp);
             cart = []; 
         } else { alert("Error placing order."); checkout(); }
     })
@@ -353,3 +342,67 @@ navigator.geolocation.getCurrentPosition(
     { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
 
 );
+//-----------------------------------------------------------------------
+
+function showPaymentForm(orderId, amount, hotelWhatsApp) {
+    const out = document.getElementById("out");
+
+    out.innerHTML = `
+        <div style="padding:20px; text-align:center;">
+            <h2 style="color: var(--primary);">Complete Payment</h2>
+            <p>Pay ₹${amount} via UPI</p>
+
+            <input id="utr_input" placeholder="Enter UTR Number"
+                style="width:100%; padding:12px; margin-top:15px; border-radius:10px; border:1px solid #ddd;" />
+
+            <input type="file" id="file_input"
+                style="margin-top:15px;" />
+
+            <button onclick="submitPaymentProof('${orderId}', '${hotelWhatsApp}')"
+                style="margin-top:20px; width:100%; padding:15px; background:#22c55e; color:white; border:none; border-radius:12px; font-weight:bold;">
+                Submit Payment ✅
+            </button>
+        </div>
+    `;
+}
+//---------------------------------------------------------------------
+function submitPaymentProof(orderId, hotelWhatsApp) {
+    const utr = document.getElementById("utr_input").value;
+    const file = document.getElementById("file_input").files[0];
+
+    if (!utr || !file) {
+        alert("Enter UTR and upload screenshot!");
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function () {
+        const base64 = reader.result.split(",")[1];
+
+        fetch(API, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "uploadPayment",
+                order_id: orderId,
+                utr: utr,
+                file: base64
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+
+                const msg = encodeURIComponent(
+                    `Payment Done\nOrder ID: ${orderId}\nUTR: ${utr}\nScreenshot: ${res.file_url}`
+                );
+
+                window.location.href = `https://wa.me/${hotelWhatsApp}?text=${msg}`;
+            } else {
+                alert("Upload failed");
+            }
+        });
+    };
+
+    reader.readAsDataURL(file);
+}
