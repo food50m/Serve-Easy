@@ -158,7 +158,7 @@ function placeFinalOrder() {
 
     out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Sending your order... 🚀</p></div>`;
 
- // 🔥 CORS FIX: added action in URL
+    // POST request specifically formatted for Google Apps Script
     fetch(API + "?action=createOrder", {
         method: "POST",
         body: JSON.stringify({
@@ -174,20 +174,19 @@ function placeFinalOrder() {
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            const payInstruction = payMode === "Online" 
-                ? `📲 *Instruction:* ${name}, please send payment on this number and share the screenshot here.` 
-                : `💵 *Instruction:* ${name}, please pay at the counter.`;
-
-            const waMessage = window.encodeURIComponent(
-                `*NEW ORDER RECEIVED*\n--------------------------\n*Order ID:* ${res.order_id}\n*Customer:* ${name}\n*Items:* ${itemsString}\n*Total:* ₹${totalAmount}\n*Payment:* ${payMode}\n*Notes:* ${note || 'None'}\n--------------------------\n${payInstruction}`
-            );
-showPaymentForm(res.order_id, totalAmount, hotelWhatsApp);
+            showPaymentForm(res.order_id, totalAmount, hotelWhatsApp);
             cart = []; 
-        } else { alert("Error placing order."); checkout(); }
+        } else { 
+            alert("Error placing order: " + (res.error || "Unknown error")); 
+            checkout(); 
+        }
     })
-    .catch(err => { console.error(err); checkout(); });
+    .catch(err => { 
+        console.error("Order Fetch Error:", err); 
+        alert("Server connection failed. Please try again.");
+        checkout(); 
+    });
 }
-
 // -------------------------------
 // 4. GEOLOCATION & LISTING
 // -------------------------------
@@ -205,9 +204,13 @@ function filterRestaurants() {
 }
 
 function loadRestaurants() {
-   // 🔥 CORS FIX: switched POST → GET (query params)
+    const out = document.getElementById("out");
+    // Using simple GET - Google Apps Script handles this best
     fetch(API + "?action=getAllRestaurants")
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) throw new Error('Network response was not ok');
+        return r.json();
+    })
     .then(rows => {
         allRestaurants = [];
         rows.forEach(r => {
@@ -215,15 +218,21 @@ function loadRestaurants() {
             if (String(enabled).toUpperCase() !== "YES") return;
             const distance = getDistanceKm(userLat, userLng, Number(lat), Number(lng));
             allRestaurants.push({
-                restaurant_id: id, name: name, distance: distance, whatsapp: wa, cuisines: cuisines || ""
+                restaurant_id: id, 
+                name: name, 
+                distance: distance, 
+                whatsapp: wa, 
+                cuisines: cuisines || ""
             });
         });
         allRestaurants.sort((a, b) => (a.distance || 999) - (b.distance || 999));
         renderRestaurants(allRestaurants);
     })
-    .catch(err => console.error("API Error:", err));
+    .catch(err => {
+        console.error("API Error:", err);
+        out.innerHTML = `<div style="text-align:center; padding:20px;"><p style="color:red;">Unable to connect to server. Please check your internet.</p></div>`;
+    });
 }
-
 function renderRestaurants(list) {
     const out = document.getElementById("out");
     out.innerHTML = "";
@@ -254,14 +263,15 @@ function openMenu(id, name) {
 
     out.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-light);"><p>🍱 Fetching menu...</p></div>`;
 
-    const cacheBuster = API + (API.includes('?') ? '&' : '?') + "t=" + new Date().getTime();
+    // Added Cache Buster to prevent loading old menu data
+    const menuUrl = `${API}?action=getMenu&restaurant_id=${id}&t=${new Date().getTime()}`;
 
-     // 🔥 CORS FIX: switched POST → GET
-    fetch(API + "?action=getMenu&restaurant_id=" + id)
+    fetch(menuUrl)
     .then(r => r.json())
     .then(items => renderMenuItems(name, items))
     .catch(err => {
-        out.innerHTML = `<div style="text-align:center; padding:50px;"><p style="color:red;">Error loading menu.</p><button onclick="openMenu('${id}', '${name}')">Retry</button></div>`;
+        console.error("Menu Error:", err);
+        out.innerHTML = `<div style="text-align:center; padding:50px;"><p style="color:red;">Error loading menu.</p><button onclick="openMenu('${id}', '${name}')" style="padding:10px 20px; border-radius:10px; border:none; background:var(--primary); color:white;">Retry</button></div>`;
     });
 }
 // -------------------------------
