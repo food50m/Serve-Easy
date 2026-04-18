@@ -205,32 +205,35 @@ function filterRestaurants() {
 
 function loadRestaurants() {
     const out = document.getElementById("out");
-    // Using simple GET - Google Apps Script handles this best
+    
     fetch(API + "?action=getAllRestaurants")
-    .then(r => {
-        if (!r.ok) throw new Error('Network response was not ok');
-        return r.json();
-    })
-    .then(rows => {
+    .then(r => r.json())
+    .then(data => {
+        // CHECK: If data is an error object instead of an array
+        if (!Array.isArray(data)) {
+            console.error("Script Error:", data.error || "Unknown Script Error");
+            out.innerHTML = `<div style="text-align:center; padding:20px;">
+                <p style="color:red;">Server Error: ${data.error || 'Check Spreadsheet'}</p>
+            </div>`;
+            return; 
+        }
+
+        // Only run this if data is confirmed to be an array
         allRestaurants = [];
-        rows.forEach(r => {
+        data.forEach(r => {
             const [id, name, user, pass, lat, lng, enabled, o_id, m_id, wa, cuisines] = r;
             if (String(enabled).toUpperCase() !== "YES") return;
             const distance = getDistanceKm(userLat, userLng, Number(lat), Number(lng));
             allRestaurants.push({
-                restaurant_id: id, 
-                name: name, 
-                distance: distance, 
-                whatsapp: wa, 
-                cuisines: cuisines || ""
+                restaurant_id: id, name: name, distance: distance, whatsapp: wa, cuisines: cuisines || ""
             });
         });
         allRestaurants.sort((a, b) => (a.distance || 999) - (b.distance || 999));
         renderRestaurants(allRestaurants);
     })
     .catch(err => {
-        console.error("API Error:", err);
-        out.innerHTML = `<div style="text-align:center; padding:20px;"><p style="color:red;">Unable to connect to server. Please check your internet.</p></div>`;
+        console.error("Fetch Error:", err);
+        out.innerHTML = `<p style="color:red; text-align:center;">Connection Failed</p>`;
     });
 }
 function renderRestaurants(list) {
