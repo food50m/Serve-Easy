@@ -158,17 +158,17 @@ function placeFinalOrder() {
 
     out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Sending your order... 🚀</p></div>`;
 
-    fetch(API, {
+ // 🔥 CORS FIX: added action in URL
+    fetch(API + "?action=createOrder", {
         method: "POST",
         body: JSON.stringify({
-            action: "createOrder",
             restaurant_id: selectedRestaurantId,
             items: itemsString,
             total: totalAmount,
             customer_name: name,
             customer_phone: phone,
-            payment_mode: payMode,
-            notes: note
+            payment_mode: payMode,  
+            notes: note  
         })
     })
     .then(r => r.json())
@@ -205,10 +205,8 @@ function filterRestaurants() {
 }
 
 function loadRestaurants() {
-    fetch(API, {
-        method: "POST",
-        body: JSON.stringify({ action: "getAllRestaurants" })
-    })
+   // 🔥 CORS FIX: switched POST → GET (query params)
+    fetch(API + "?action=getAllRestaurants")
     .then(r => r.json())
     .then(rows => {
         allRestaurants = [];
@@ -258,7 +256,8 @@ function openMenu(id, name) {
 
     const cacheBuster = API + (API.includes('?') ? '&' : '?') + "t=" + new Date().getTime();
 
-    fetch(cacheBuster, { method: "POST", body: JSON.stringify({ action: "getMenu", restaurant_id: id }) })
+     // 🔥 CORS FIX: switched POST → GET
+    fetch(API + "?action=getMenu&restaurant_id=" + id)
     .then(r => r.json())
     .then(items => renderMenuItems(name, items))
     .catch(err => {
@@ -380,10 +379,10 @@ function submitPaymentProof(orderId, hotelWhatsApp) {
     reader.onload = function () {
         const base64 = reader.result.split(",")[1];
 
-        fetch(API, {
+        // 🔥 CORS FIX: added action in URL
+        fetch(API + "?action=uploadPayment", {
             method: "POST",
             body: JSON.stringify({
-                action: "uploadPayment",
                 order_id: orderId,
                 utr: utr,
                 file: base64
