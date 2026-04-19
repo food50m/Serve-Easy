@@ -3,7 +3,8 @@
   Description: Handles geolocation, restaurant listing, menu fetching, and order placement.
 */
 
-const API = "https://script.google.com/macros/s/AKfycbw-LmdGMwxHNBoRL_Zpvgzag7GkboaetJy8i5NmePCIphxIzOH7Wk1OFWXaxWnLuoVZ/exec";
+
+const API = "https://script.google.com/macros/s/AKfycbwej8ucUYbdZnuOF23GbdXf2gyCKOob4cKL3EbuWv3YtBkxpj1QJqKk742sMCUsSxaj/exec";
 
 // -------------------------------
 // GLOBAL STATE
