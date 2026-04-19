@@ -435,44 +435,37 @@ function showPaymentForm(orderId, amount, hotelWhatsApp) {
     `;
 }
 //---------------------------------------------------------------------
-function submitPaymentProof(orderId, hotelWhatsApp) {
-    const utr = document.getElementById("utr_input").value;
-    const file = document.getElementById("file_input").files[0];
-
-    if (!utr || !file) {
-        alert("Enter UTR and upload screenshot!");
-        return;
-    }
-
+async function submitPaymentProof(orderId, utr, file) {
     const reader = new FileReader();
-
-    reader.onload = function () {
-        const base64 = reader.result.split(",")[1];
-
-        // 🔥 CORS FIX: added action in URL
-      fetch(API + "?action=uploadPayment", {
-    method: "POST",
-    body: JSON.stringify({
-        restaurant_id: sessionStorage.getItem("current_res_id"), // CRITICAL
-        order_id: orderId,
-        utr: utr,
-        file: base64
-    })
-})
-        .then(res => res.json())
-        .then(res => {
-            if (res.success) {
-
-                const msg = encodeURIComponent(
-                    `Payment Done\nOrder ID: ${orderId}\nUTR: ${utr}\nScreenshot: ${res.file_url}`
-                );
-
-                window.location.href = `https://wa.me/${hotelWhatsApp}?text=${msg}`;
-            } else {
-                alert("Upload failed");
-            }
-        });
-    };
-
     reader.readAsDataURL(file);
+    reader.onload = async () => {
+        const base64File = reader.result.split(',')[1];
+        
+        const payload = {
+            action: 'uploadPayment', // Action is now INSIDE the body
+            order_id: orderId,
+            utr: utr,
+            file: base64File
+        };
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Use no-cors to bypass complex pre-flights for images
+                redirect: 'follow', // CRITICAL: Follows the 302 redirect
+                body: JSON.stringify(payload)
+            });
+
+            // Note: with 'no-cors', you cannot read the JSON response.
+            // If you need the response, change to mode: 'cors' and ensure 
+            // the backend output function has the headers we discussed.
+            
+            alert("Payment submitted successfully!");
+            window.location.reload(); 
+
+        } catch (error) {
+            console.error("Upload error:", error);
+            alert("Upload failed. Please check your internet or try again.");
+        }
+    };
 }
