@@ -393,14 +393,15 @@ function submitPaymentProof(orderId, hotelWhatsApp) {
         const base64 = reader.result.split(",")[1];
 
         // 🔥 CORS FIX: added action in URL
-        fetch(API + "?action=uploadPayment", {
-            method: "POST",
-            body: JSON.stringify({
-                order_id: orderId,
-                utr: utr,
-                file: base64
-            })
-        })
+      fetch(API + "?action=uploadPayment", {
+    method: "POST",
+    body: JSON.stringify({
+        restaurant_id: sessionStorage.getItem("current_res_id"), // CRITICAL
+        order_id: orderId,
+        utr: utr,
+        file: base64
+    })
+})
         .then(res => res.json())
         .then(res => {
             if (res.success) {
