@@ -480,7 +480,7 @@ async function submitPaymentProof(orderId, file, hotelWhatsApp) {
         };
     };
 }
---------------------------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------------------
 async function handlePaymentSubmission(orderId, hotelWhatsApp) {
     const fileInput = document.getElementById('screenshotInput');
     const file = fileInput.files[0];
