@@ -438,34 +438,44 @@ function showPaymentForm(orderId, amount, hotelWhatsApp) {
 async function submitPaymentProof(orderId, utr, file) {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = async () => {
-        const base64File = reader.result.split(',')[1];
-        
-        const payload = {
-            action: 'uploadPayment', // Action is now INSIDE the body
-            order_id: orderId,
-            utr: utr,
-            file: base64File
-        };
+    reader.onload = async (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = async () => {
+            // --- COMPRESSION START ---
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800; // Resize to max 800px width
+            const scaleSize = MAX_WIDTH / img.width;
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * scaleSize;
 
-        try {
-            const response = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors', // Use no-cors to bypass complex pre-flights for images
-                redirect: 'follow', // CRITICAL: Follows the 302 redirect
-                body: JSON.stringify(payload)
-            });
-
-            // Note: with 'no-cors', you cannot read the JSON response.
-            // If you need the response, change to mode: 'cors' and ensure 
-            // the backend output function has the headers we discussed.
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             
-            alert("Payment submitted successfully!");
-            window.location.reload(); 
+            // Convert to lower quality JPEG (0.7 = 70% quality)
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+            // --- COMPRESSION END ---
 
-        } catch (error) {
-            console.error("Upload error:", error);
-            alert("Upload failed. Please check your internet or try again.");
-        }
+            const payload = {
+                action: 'uploadPayment',
+                order_id: orderId,
+                utr: utr,
+                file: compressedBase64
+            };
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    redirect: 'follow'
+                });
+                
+                alert("Payment Verified! Screenshot uploaded to the restaurant's folder.");
+                location.reload();
+            } catch (e) {
+                console.error(e);
+                alert("Upload failed. Try a smaller photo or check connection.");
+            }
+        };
     };
 }
