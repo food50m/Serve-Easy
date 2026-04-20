@@ -497,6 +497,4 @@ async function handlePaymentSubmission(orderId, hotelWhatsApp) {
     // Call the uploader
     submitPaymentProof(orderId, file, hotelWhatsApp);
 }
-    // Now call the function that does the heavy lifting
-    submitPaymentProof(orderId, file);
-}
+   
