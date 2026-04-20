@@ -419,63 +419,84 @@ function showPaymentForm(orderId, amount, hotelWhatsApp) {
     out.innerHTML = `
         <div style="padding:20px; text-align:center;">
             <h2 style="color: var(--primary);">Complete Payment</h2>
-            <p>Pay ₹${amount} via UPI</p>
+            <p style="font-weight:bold; font-size:1.2rem;">Amount: ₹${amount}</p>
+            <p style="color:gray; font-size:0.9rem;">Please upload the payment screenshot for instant verification.</p>
 
-            <input id="utr_input" placeholder="Enter UTR Number"
-                style="width:100%; padding:12px; margin-top:15px; border-radius:10px; border:1px solid #ddd;" />
+            <div style="margin-top:20px; border:2px dashed #ddd; padding:20px; border-radius:15px; background:#f9fafb;">
+                <input type="file" id="screenshotInput" accept="image/*" style="width:100%;">
+            </div>
 
-            <input type="file" id="file_input"
-                style="margin-top:15px;" />
-
-            <button onclick="submitPaymentProof('${orderId}', '${hotelWhatsApp}')"
-                style="margin-top:20px; width:100%; padding:15px; background:#22c55e; color:white; border:none; border-radius:12px; font-weight:bold;">
+            <button id="submitPayBtn" onclick="handlePaymentSubmission('${orderId}', '${hotelWhatsApp}')" 
+                style="margin-top:25px; width:100%; padding:18px; background:#22c55e; color:white; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer;">
                 Submit Payment ✅
             </button>
         </div>
     `;
 }
 //---------------------------------------------------------------------
-async function submitPaymentProof(orderId, utr, file) {
+async function submitPaymentProof(orderId, file, hotelWhatsApp) {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = async (event) => {
         const img = new Image();
         img.src = event.target.result;
         img.onload = async () => {
-            // --- COMPRESSION START ---
+            // COMPRESSION
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800; // Resize to max 800px width
+            const MAX_WIDTH = 800; 
             const scaleSize = MAX_WIDTH / img.width;
             canvas.width = MAX_WIDTH;
             canvas.height = img.height * scaleSize;
-
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             
-            // Convert to lower quality JPEG (0.7 = 70% quality)
             const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-            // --- COMPRESSION END ---
 
             const payload = {
                 action: 'uploadPayment',
                 order_id: orderId,
-                utr: utr,
+                utr: "IMAGE_UPLOADED", // Placeholder since we removed the input
                 file: compressedBase64
             };
 
             try {
-                const response = await fetch(SCRIPT_URL, {
+                // Using API variable defined at top of your file
+                await fetch(API + "?action=uploadPayment", {
                     method: 'POST',
-                    body: JSON.stringify(payload),
-                    redirect: 'follow'
+                    mode: 'no-cors',
+                    body: JSON.stringify(payload)
                 });
-                
-                alert("Payment Verified! Screenshot uploaded to the restaurant's folder.");
-                location.reload();
+
+                // SUCCESS REDIRECT TO WHATSAPP
+                const msg = `Hi, I have uploaded the payment proof for Order: ${orderId}. Please verify!`;
+                alert("Upload Successful! Opening WhatsApp for final confirmation.");
+                window.location.href = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(msg)}`;
+
             } catch (e) {
                 console.error(e);
-                alert("Upload failed. Try a smaller photo or check connection.");
+                alert("Upload complete! Please check with the restaurant.");
+                location.reload();
             }
         };
     };
+}
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+async function handlePaymentSubmission(orderId, hotelWhatsApp) {
+    const fileInput = document.getElementById('screenshotInput');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select a screenshot first!");
+        return;
+    }
+
+    const btn = document.getElementById("submitPayBtn");
+    btn.disabled = true;
+    btn.innerText = "Uploading... Please Wait";
+
+    // Call the uploader
+    submitPaymentProof(orderId, file, hotelWhatsApp);
+}
+    // Now call the function that does the heavy lifting
+    submitPaymentProof(orderId, file);
 }
