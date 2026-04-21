@@ -434,14 +434,61 @@ function showPaymentForm(orderId, amount, hotelWhatsApp) {
     `;
 }
 //---------------------------------------------------------------------
-async function submitPaymentProof(orderId, file, hotelWhatsApp) {
+// async function submitPaymentProof(orderId, file, hotelWhatsApp) {
+//     const reader = new FileReader();
+//     reader.readAsDataURL(file);
+//     reader.onload = async (event) => {
+//         const img = new Image();
+//         img.src = event.target.result;
+//         img.onload = async () => {
+//             // COMPRESSION
+//             const canvas = document.createElement('canvas');
+//             const MAX_WIDTH = 800; 
+//             const scaleSize = MAX_WIDTH / img.width;
+//             canvas.width = MAX_WIDTH;
+//             canvas.height = img.height * scaleSize;
+//             const ctx = canvas.getContext('2d');
+//             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+//             const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+
+//             const payload = {
+//                 action: 'uploadPayment',
+//                 order_id: orderId,
+//                 utr: "IMAGE_UPLOADED", // Placeholder since we removed the input
+//                 file: compressedBase64
+//             };
+
+//             try {
+//                 // Using API variable defined at top of your file
+//                 await fetch(API + "?action=uploadPayment", {
+//                     method: 'POST',
+//                     mode: 'no-cors',
+//                     body: JSON.stringify(payload)
+//                 });
+
+//                 // SUCCESS REDIRECT TO WHATSAPP
+//                 const msg = `Hi, I have uploaded the payment proof for Order: ${orderId}. Please verify!`;
+//                 alert("Upload Successful! Opening WhatsApp for final confirmation.");
+//                 window.location.href = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(msg)}`;
+
+//             } catch (e) {
+//                 console.error(e);
+//                 alert("Upload complete! Please check with the restaurant.");
+//                 location.reload();
+//             }
+//         };
+//     };
+// }
+// Add 'receiptMsg' as the 4th argument
+async function submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg) {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = async (event) => {
         const img = new Image();
         img.src = event.target.result;
         img.onload = async () => {
-            // COMPRESSION
+            // ... (KEEP YOUR EXISTING COMPRESSION CODE) ...
             const canvas = document.createElement('canvas');
             const MAX_WIDTH = 800; 
             const scaleSize = MAX_WIDTH / img.width;
@@ -449,39 +496,53 @@ async function submitPaymentProof(orderId, file, hotelWhatsApp) {
             canvas.height = img.height * scaleSize;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
             const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 
             const payload = {
                 action: 'uploadPayment',
                 order_id: orderId,
-                utr: "IMAGE_UPLOADED", // Placeholder since we removed the input
+                utr: "IMAGE_UPLOADED",
                 file: compressedBase64
             };
 
             try {
-                // Using API variable defined at top of your file
                 await fetch(API + "?action=uploadPayment", {
                     method: 'POST',
                     mode: 'no-cors',
                     body: JSON.stringify(payload)
                 });
 
-                // SUCCESS REDIRECT TO WHATSAPP
-                const msg = `Hi, I have uploaded the payment proof for Order: ${orderId}. Please verify!`;
+                // 🟢 SUCCESS: USE THE DETAILED RECEIPT MESSAGE HERE
                 alert("Upload Successful! Opening WhatsApp for final confirmation.");
-                window.location.href = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(msg)}`;
+                
+                // We use the 'receiptMsg' passed from the handle function
+                window.location.href = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(receiptMsg)}`;
 
             } catch (e) {
                 console.error(e);
-                alert("Upload complete! Please check with the restaurant.");
-                location.reload();
+                alert("Error during upload. Please notify the restaurant.");
             }
         };
     };
 }
 //--------------------------------------------------------------------------------------------------------------------------------------------------------
-async function handlePaymentSubmission(orderId, hotelWhatsApp) {
+// async function handlePaymentSubmission(orderId, hotelWhatsApp) {
+//     const fileInput = document.getElementById('screenshotInput');
+//     const file = fileInput.files[0];
+
+//     if (!file) {
+//         alert("Please select a screenshot first!");
+//         return;
+//     }
+
+//     const btn = document.getElementById("submitPayBtn");
+//     btn.disabled = true;
+//     btn.innerText = "Uploading... Please Wait";
+
+//     // Call the uploader
+//     submitPaymentProof(orderId, file, hotelWhatsApp);
+// }
+   async function handlePaymentSubmission(orderId, hotelWhatsApp) {
     const fileInput = document.getElementById('screenshotInput');
     const file = fileInput.files[0];
 
@@ -490,11 +551,30 @@ async function handlePaymentSubmission(orderId, hotelWhatsApp) {
         return;
     }
 
+    // 🟢 BUILD THE DETAILED MESSAGE
+    const customerName = document.getElementById("customerName").value;
+    const customerPhone = document.getElementById("customerPhone").value;
+    const totalAmount = document.getElementById("cart-total").innerText;
+    
+    // Assuming 'cart' is your array of items
+    const itemsList = cart.map(i => `${i.qty}x ${i.name}`).join("\n");
+
+    const receiptMsg = `*NEW ORDER RECEIVED*
+--------------------------
+*Order ID:* ${orderId}
+*Customer:* ${customerName}
+*Mobile:* ${customerPhone}
+*Items:*
+${itemsList}
+*Total:* ₹${totalAmount}
+*Payment:* Online (Screenshot Uploaded)
+--------------------------
+💵 *Instruction:* Please verify screenshot in your Restaurant Panel.`;
+
     const btn = document.getElementById("submitPayBtn");
     btn.disabled = true;
     btn.innerText = "Uploading... Please Wait";
 
-    // Call the uploader
-    submitPaymentProof(orderId, file, hotelWhatsApp);
+    // 🟢 PASS THE DETAILED MESSAGE TO THE NEXT FUNCTION
+    submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg);
 }
-   
