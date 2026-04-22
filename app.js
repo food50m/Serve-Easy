@@ -188,24 +188,56 @@ function changeQty(index, amount) {
 //         checkout(); 
 //     });
 // }
-async function placeFinalOrder() {
-    try {
-        // 🟢 GRAB DATA FIRST - BEFORE ANYTHING ELSE HAPPENS
-        const name = document.getElementById("customerName").value;
-        const phone = document.getElementById("customerPhone").value;
-        const total = document.getElementById("cart-total").innerText;
+ function placeFinalOrder() {
+    const name = document.getElementById("cust_name").value;
+    const phone = document.getElementById("cust_phone").value;
+    const note = document.getElementById("cust_note").value;
+    const payMode = document.getElementById("pay_mode").value;
 
-        // ... your existing logic to send order to Google Sheets ...
-        // const response = await fetch(...);
-        // const result = await response.json();
+    if (!name || !phone) { alert("Please enter name and phone!"); return; }
 
-        // 🟢 PASS THE DATA TO THE PAYMENT FORM
-        // Assuming your 'result' gives you the new Order ID
-        showPaymentForm(result.orderId, total, hotelWhatsApp, name, phone);
+    const btn = document.getElementById("finalOrderBtn");
+    if(btn) { btn.disabled = true; btn.innerText = "Processing..."; }
 
-    } catch (error) {
-        console.error("Order Fetch Error:", error);
-    }
+    localStorage.setItem("user_name", name);
+    localStorage.setItem("user_phone", phone);
+
+    const out = document.getElementById("out");
+    const selectedRestaurantId = sessionStorage.getItem("current_res_id");
+    const hotelWhatsApp = sessionStorage.getItem("current_res_wa") || "910000000000";
+    const itemsString = cart.map(item => `${item.qty}x ${item.name}`).join(", ");
+    const totalAmount = cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
+
+    out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Sending your order... 🚀</p></div>`;
+
+    fetch(API + "?action=createOrder", {
+        method: "POST",
+        body: JSON.stringify({
+            restaurant_id: selectedRestaurantId,
+            items: itemsString,
+            total: totalAmount,
+            customer_name: name,
+            customer_phone: phone,
+            payment_mode: payMode,  
+            notes: note  
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            // 🟢 PASS NAME AND PHONE HERE
+            showPaymentForm(res.order_id, totalAmount, hotelWhatsApp, name, phone, itemsString);
+            cart = []; 
+        } else { 
+            alert("Error placing order: " + (res.error || "Unknown error")); 
+            checkout(); 
+        }
+    })
+    .catch(err => { 
+        console.error("Order Fetch Error:", err); 
+        alert("Server connection failed. Please try again.");
+        checkout(); 
+    });
 }
 // ----------------------------------------------------------------------------------------------
 // 4. GEOLOCATION & LISTING
@@ -468,24 +500,29 @@ navigator.geolocation.getCurrentPosition(
 //     });
 // }
 // Now this function receives name and phone as arguments!
-function showPaymentForm(orderId, amount, hotelWhatsApp, name, phone) {
+function showPaymentForm(orderId, amount, hotelWhatsApp, name, phone, itemsSummary) {
     const out = document.getElementById("out");
-
-    // We don't use document.getElementById("customerName") here anymore!
-    // Because we already have the 'name' and 'phone' passed in.
-    const itemsSummary = cart.map(i => `${i.qty}x ${i.name}`).join(", ");
 
     out.innerHTML = `
         <div style="padding:20px; text-align:center;">
-            <h2>Complete Payment</h2>
-            <p>Order ID: ${orderId}</p>
-            <p>Amount: ₹${amount}</p>
-            <input type="file" id="screenshotInput" accept="image/*">
-            <button id="submitPayBtn">Submit Payment ✅</button>
+            <h2 style="color: #22c55e;">Order Placed! ✅</h2>
+            <p style="margin-bottom:10px;">Order ID: <b>${orderId}</b></p>
+            <p style="font-size:1.2rem; font-weight:bold;">Total to Pay: ₹${amount}</p>
+            
+            <div style="margin:20px 0; border:2px dashed #ccc; padding:20px; border-radius:10px; background:#f9f9f9;">
+                <p style="font-size:0.9rem; color:#666;">Upload Payment Screenshot</p>
+                <input type="file" id="screenshotInput" accept="image/*" style="width:100%; margin-top:10px;">
+            </div>
+
+            <button id="submitPayBtn" 
+                style="width:100%; padding:15px; background:#16a34a; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">
+                Submit Payment & Notify WhatsApp
+            </button>
         </div>
     `;
 
     document.getElementById("submitPayBtn").onclick = () => {
+        // 🟢 Pass all the data forward to handle the final WhatsApp message
         handlePaymentSubmission(orderId, hotelWhatsApp, name, phone, amount, itemsSummary);
     };
 }
@@ -542,7 +579,7 @@ async function submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg) {
     const file = fileInput.files[0];
 
     if (!file) {
-        alert("Please select a screenshot first!");
+        alert("Please select your payment screenshot!");
         return;
     }
 
@@ -550,7 +587,7 @@ async function submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg) {
     btn.disabled = true;
     btn.innerText = "Uploading... Please Wait";
 
-    // Build the final message using the passed arguments
+    // Build the WhatsApp receipt
     const receiptMsg = `*NEW ORDER RECEIVED*
 --------------------------
 *Order ID:* ${orderId}
@@ -562,6 +599,6 @@ async function submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg) {
 --------------------------
 💵 *Instruction:* Please verify screenshot in your Restaurant Panel.`;
 
-    // Send to the uploader function
+    // Send to your existing submitPaymentProof function
     submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg);
 }
