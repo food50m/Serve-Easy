@@ -413,25 +413,59 @@ navigator.geolocation.getCurrentPosition(
 );
 //-----------------------------------------------------------------------
 
+// function showPaymentForm(orderId, amount, hotelWhatsApp) {
+//     const out = document.getElementById("out");
+
+//     out.innerHTML = `
+//         <div style="padding:20px; text-align:center;">
+//             <h2 style="color: var(--primary);">Complete Payment</h2>
+//             <p style="font-weight:bold; font-size:1.2rem;">Amount: ₹${amount}</p>
+//             <p style="color:gray; font-size:0.9rem;">Please upload the payment screenshot for instant verification.</p>
+
+//             <div style="margin-top:20px; border:2px dashed #ddd; padding:20px; border-radius:15px; background:#f9fafb;">
+//                 <input type="file" id="screenshotInput" accept="image/*" style="width:100%;">
+//             </div>
+
+//             <button id="submitPayBtn" onclick="handlePaymentSubmission('${orderId}', '${hotelWhatsApp}')" 
+//                 style="margin-top:25px; width:100%; padding:18px; background:#22c55e; color:white; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer;">
+//                 Submit Payment ✅
+//             </button>
+//         </div>
+//     `;
+// }
 function showPaymentForm(orderId, amount, hotelWhatsApp) {
+    // 1. Capture the values while the inputs still exist
+    const name = document.getElementById("customerName").value;
+    const phone = document.getElementById("customerPhone").value;
+    
+    // 2. Prepare the items list as a clean string
+    const itemsSummary = cart.map(i => `${i.qty}x ${i.name}`).join(", ");
+
     const out = document.getElementById("out");
 
+    // 3. Inject the Payment UI
     out.innerHTML = `
         <div style="padding:20px; text-align:center;">
             <h2 style="color: var(--primary);">Complete Payment</h2>
             <p style="font-weight:bold; font-size:1.2rem;">Amount: ₹${amount}</p>
-            <p style="color:gray; font-size:0.9rem;">Please upload the payment screenshot for instant verification.</p>
+            <p style="color:gray; font-size:0.9rem;">Upload screenshot for Order: ${orderId}</p>
 
             <div style="margin-top:20px; border:2px dashed #ddd; padding:20px; border-radius:15px; background:#f9fafb;">
                 <input type="file" id="screenshotInput" accept="image/*" style="width:100%;">
             </div>
 
-            <button id="submitPayBtn" onclick="handlePaymentSubmission('${orderId}', '${hotelWhatsApp}')" 
+            <button id="submitPayBtn" 
                 style="margin-top:25px; width:100%; padding:18px; background:#22c55e; color:white; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer;">
                 Submit Payment ✅
             </button>
         </div>
     `;
+
+    // 4. Use an Event Listener instead of 'onclick' in HTML string 
+    // This avoids quote errors with the itemsSummary
+    document.getElementById("submitPayBtn").addEventListener("click", () => {
+        handlePaymentSubmission(orderId, hotelWhatsApp, name, phone, amount, itemsSummary);
+    });
 }
 //---------------------------------------------------------------------
 // async function submitPaymentProof(orderId, file, hotelWhatsApp) {
@@ -542,7 +576,7 @@ async function submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg) {
 //     // Call the uploader
 //     submitPaymentProof(orderId, file, hotelWhatsApp);
 // }
-   async function handlePaymentSubmission(orderId, hotelWhatsApp) {
+  async function handlePaymentSubmission(orderId, hotelWhatsApp, name, phone, amount, items) {
     const fileInput = document.getElementById('screenshotInput');
     const file = fileInput.files[0];
 
@@ -551,30 +585,22 @@ async function submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg) {
         return;
     }
 
-    // 🟢 BUILD THE DETAILED MESSAGE
-    const customerName = document.getElementById("customerName").value;
-    const customerPhone = document.getElementById("customerPhone").value;
-    const totalAmount = document.getElementById("cart-total").innerText;
-    
-    // Assuming 'cart' is your array of items
-    const itemsList = cart.map(i => `${i.qty}x ${i.name}`).join("\n");
-
-    const receiptMsg = `*NEW ORDER RECEIVED*
---------------------------
-*Order ID:* ${orderId}
-*Customer:* ${customerName}
-*Mobile:* ${customerPhone}
-*Items:*
-${itemsList}
-*Total:* ₹${totalAmount}
-*Payment:* Online (Screenshot Uploaded)
---------------------------
-💵 *Instruction:* Please verify screenshot in your Restaurant Panel.`;
-
     const btn = document.getElementById("submitPayBtn");
     btn.disabled = true;
     btn.innerText = "Uploading... Please Wait";
 
-    // 🟢 PASS THE DETAILED MESSAGE TO THE NEXT FUNCTION
+    // Build the final message using the passed arguments
+    const receiptMsg = `*NEW ORDER RECEIVED*
+--------------------------
+*Order ID:* ${orderId}
+*Customer:* ${name}
+*Mobile:* ${phone}
+*Items:* ${items}
+*Total:* ₹${amount}
+*Payment:* Online (Screenshot Uploaded)
+--------------------------
+💵 *Instruction:* Please verify screenshot in your Restaurant Panel.`;
+
+    // Send to the uploader function
     submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg);
 }
