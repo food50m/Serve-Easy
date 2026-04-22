@@ -137,60 +137,79 @@ function changeQty(index, amount) {
 // 3. FINAL ORDER & WHATSAPP
 // -------------------------------
 
-function placeFinalOrder() {
-    const name = document.getElementById("cust_name").value;
-    const phone = document.getElementById("cust_phone").value;
-    const note = document.getElementById("cust_note").value;
-    const payMode = document.getElementById("pay_mode").value;
+// function placeFinalOrder() {
+//     const name = document.getElementById("cust_name").value;
+//     const phone = document.getElementById("cust_phone").value;
+//     const note = document.getElementById("cust_note").value;
+//     const payMode = document.getElementById("pay_mode").value;
 
-    if (!name || !phone) { alert("Please enter name and phone!"); return; }
+//     if (!name || !phone) { alert("Please enter name and phone!"); return; }
 
-    const btn = document.getElementById("finalOrderBtn");
-    if(btn) { btn.disabled = true; btn.innerText = "Processing..."; }
+//     const btn = document.getElementById("finalOrderBtn");
+//     if(btn) { btn.disabled = true; btn.innerText = "Processing..."; }
 
-    localStorage.setItem("user_name", name);
-    localStorage.setItem("user_phone", phone);
+//     localStorage.setItem("user_name", name);
+//     localStorage.setItem("user_phone", phone);
 
-    const out = document.getElementById("out");
-    const selectedRestaurantId = sessionStorage.getItem("current_res_id");
-    const hotelWhatsApp = sessionStorage.getItem("current_res_wa") || "910000000000";
-    const itemsString = cart.map(item => `${item.qty}x ${item.name}`).join(", ");
-    const totalAmount = cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
+//     const out = document.getElementById("out");
+//     const selectedRestaurantId = sessionStorage.getItem("current_res_id");
+//     const hotelWhatsApp = sessionStorage.getItem("current_res_wa") || "910000000000";
+//     const itemsString = cart.map(item => `${item.qty}x ${item.name}`).join(", ");
+//     const totalAmount = cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
 
-    out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Sending your order... 🚀</p></div>`;
+//     out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Sending your order... 🚀</p></div>`;
 
-    // POST request specifically formatted for Google Apps Script
-    fetch(API + "?action=createOrder", {
-        method: "POST",
-        body: JSON.stringify({
-            restaurant_id: selectedRestaurantId,
-            items: itemsString,
-            total: totalAmount,
-            customer_name: name,
-            customer_phone: phone,
-            payment_mode: payMode,  
-            notes: note  
-        })
-    })
-    .then(r => r.json())
-    .then(res => {
-        if (res.success) {
-            showPaymentForm(res.order_id, totalAmount, hotelWhatsApp);
-            cart = []; 
-        } else { 
-            alert("Error placing order: " + (res.error || "Unknown error")); 
-            checkout(); 
-        }
-    })
-    .catch(err => { 
-        console.error("Order Fetch Error:", err); 
-        alert("Server connection failed. Please try again.");
-        checkout(); 
-    });
+//     // POST request specifically formatted for Google Apps Script
+//     fetch(API + "?action=createOrder", {
+//         method: "POST",
+//         body: JSON.stringify({
+//             restaurant_id: selectedRestaurantId,
+//             items: itemsString,
+//             total: totalAmount,
+//             customer_name: name,
+//             customer_phone: phone,
+//             payment_mode: payMode,  
+//             notes: note  
+//         })
+//     })
+//     .then(r => r.json())
+//     .then(res => {
+//         if (res.success) {
+//             showPaymentForm(res.order_id, totalAmount, hotelWhatsApp);
+//             cart = []; 
+//         } else { 
+//             alert("Error placing order: " + (res.error || "Unknown error")); 
+//             checkout(); 
+//         }
+//     })
+//     .catch(err => { 
+//         console.error("Order Fetch Error:", err); 
+//         alert("Server connection failed. Please try again.");
+//         checkout(); 
+//     });
+// }
+async function placeFinalOrder() {
+    try {
+        // 🟢 GRAB DATA FIRST - BEFORE ANYTHING ELSE HAPPENS
+        const name = document.getElementById("customerName").value;
+        const phone = document.getElementById("customerPhone").value;
+        const total = document.getElementById("cart-total").innerText;
+
+        // ... your existing logic to send order to Google Sheets ...
+        // const response = await fetch(...);
+        // const result = await response.json();
+
+        // 🟢 PASS THE DATA TO THE PAYMENT FORM
+        // Assuming your 'result' gives you the new Order ID
+        showPaymentForm(result.orderId, total, hotelWhatsApp, name, phone);
+
+    } catch (error) {
+        console.error("Order Fetch Error:", error);
+    }
 }
-// -------------------------------
+// ----------------------------------------------------------------------------------------------
 // 4. GEOLOCATION & LISTING
-// -------------------------------
+// -----------------------------------------------------------------------------------------------
 
 function filterRestaurants() {
     const q = document.getElementById("search").value.toLowerCase();
@@ -203,7 +222,7 @@ function filterRestaurants() {
         renderRestaurants(matched); 
     }
 }
-
+//--------------------------------------------
 function loadRestaurants() {
     const out = document.getElementById("out");
     
@@ -237,6 +256,7 @@ function loadRestaurants() {
         out.innerHTML = `<p style="color:red; text-align:center;">Connection Failed</p>`;
     });
 }
+//---------------------------------------------------------------------------------------------------------------
 function renderRestaurants(list) {
     const out = document.getElementById("out");
     out.innerHTML = "";
@@ -329,6 +349,7 @@ function openMenu(id, name) {
 //         <div style="height:100px;"></div>`;
 //     out.innerHTML = html;
 // }
+//-------------------------------------------------------------------------------------------------------
 function renderMenuItems(hotelName, items) {
     const out = document.getElementById("out");
 
@@ -395,7 +416,7 @@ function closeMenu() {
     if(searchCont) searchCont.style.display = 'block';
     loadRestaurants();
 }
-
+//------------------------------------------------------------------------------------------------
 function getDistanceKm(lat1, lon1, lat2, lon2) {
     if (!lat1 || !lon1 || !lat2 || !lon2) return null;
     const R = 6371;
@@ -412,108 +433,63 @@ navigator.geolocation.getCurrentPosition(
 
 );
 //-----------------------------------------------------------------------
-
 // function showPaymentForm(orderId, amount, hotelWhatsApp) {
+//     // 1. Capture the values while the inputs still exist
+//     const name = document.getElementById("customerName").value;
+//     const phone = document.getElementById("customerPhone").value;
+    
+//     // 2. Prepare the items list as a clean string
+//     const itemsSummary = cart.map(i => `${i.qty}x ${i.name}`).join(", ");
+
 //     const out = document.getElementById("out");
 
+//     // 3. Inject the Payment UI
 //     out.innerHTML = `
 //         <div style="padding:20px; text-align:center;">
 //             <h2 style="color: var(--primary);">Complete Payment</h2>
 //             <p style="font-weight:bold; font-size:1.2rem;">Amount: ₹${amount}</p>
-//             <p style="color:gray; font-size:0.9rem;">Please upload the payment screenshot for instant verification.</p>
+//             <p style="color:gray; font-size:0.9rem;">Upload screenshot for Order: ${orderId}</p>
 
 //             <div style="margin-top:20px; border:2px dashed #ddd; padding:20px; border-radius:15px; background:#f9fafb;">
 //                 <input type="file" id="screenshotInput" accept="image/*" style="width:100%;">
 //             </div>
 
-//             <button id="submitPayBtn" onclick="handlePaymentSubmission('${orderId}', '${hotelWhatsApp}')" 
+//             <button id="submitPayBtn" 
 //                 style="margin-top:25px; width:100%; padding:18px; background:#22c55e; color:white; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer;">
 //                 Submit Payment ✅
 //             </button>
 //         </div>
 //     `;
-// }
-function showPaymentForm(orderId, amount, hotelWhatsApp) {
-    // 1. Capture the values while the inputs still exist
-    const name = document.getElementById("customerName").value;
-    const phone = document.getElementById("customerPhone").value;
-    
-    // 2. Prepare the items list as a clean string
-    const itemsSummary = cart.map(i => `${i.qty}x ${i.name}`).join(", ");
 
+//     // 4. Use an Event Listener instead of 'onclick' in HTML string 
+//     // This avoids quote errors with the itemsSummary
+//     document.getElementById("submitPayBtn").addEventListener("click", () => {
+//         handlePaymentSubmission(orderId, hotelWhatsApp, name, phone, amount, itemsSummary);
+//     });
+// }
+// Now this function receives name and phone as arguments!
+function showPaymentForm(orderId, amount, hotelWhatsApp, name, phone) {
     const out = document.getElementById("out");
 
-    // 3. Inject the Payment UI
+    // We don't use document.getElementById("customerName") here anymore!
+    // Because we already have the 'name' and 'phone' passed in.
+    const itemsSummary = cart.map(i => `${i.qty}x ${i.name}`).join(", ");
+
     out.innerHTML = `
         <div style="padding:20px; text-align:center;">
-            <h2 style="color: var(--primary);">Complete Payment</h2>
-            <p style="font-weight:bold; font-size:1.2rem;">Amount: ₹${amount}</p>
-            <p style="color:gray; font-size:0.9rem;">Upload screenshot for Order: ${orderId}</p>
-
-            <div style="margin-top:20px; border:2px dashed #ddd; padding:20px; border-radius:15px; background:#f9fafb;">
-                <input type="file" id="screenshotInput" accept="image/*" style="width:100%;">
-            </div>
-
-            <button id="submitPayBtn" 
-                style="margin-top:25px; width:100%; padding:18px; background:#22c55e; color:white; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer;">
-                Submit Payment ✅
-            </button>
+            <h2>Complete Payment</h2>
+            <p>Order ID: ${orderId}</p>
+            <p>Amount: ₹${amount}</p>
+            <input type="file" id="screenshotInput" accept="image/*">
+            <button id="submitPayBtn">Submit Payment ✅</button>
         </div>
     `;
 
-    // 4. Use an Event Listener instead of 'onclick' in HTML string 
-    // This avoids quote errors with the itemsSummary
-    document.getElementById("submitPayBtn").addEventListener("click", () => {
+    document.getElementById("submitPayBtn").onclick = () => {
         handlePaymentSubmission(orderId, hotelWhatsApp, name, phone, amount, itemsSummary);
-    });
+    };
 }
 //---------------------------------------------------------------------
-// async function submitPaymentProof(orderId, file, hotelWhatsApp) {
-//     const reader = new FileReader();
-//     reader.readAsDataURL(file);
-//     reader.onload = async (event) => {
-//         const img = new Image();
-//         img.src = event.target.result;
-//         img.onload = async () => {
-//             // COMPRESSION
-//             const canvas = document.createElement('canvas');
-//             const MAX_WIDTH = 800; 
-//             const scaleSize = MAX_WIDTH / img.width;
-//             canvas.width = MAX_WIDTH;
-//             canvas.height = img.height * scaleSize;
-//             const ctx = canvas.getContext('2d');
-//             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
-//             const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-
-//             const payload = {
-//                 action: 'uploadPayment',
-//                 order_id: orderId,
-//                 utr: "IMAGE_UPLOADED", // Placeholder since we removed the input
-//                 file: compressedBase64
-//             };
-
-//             try {
-//                 // Using API variable defined at top of your file
-//                 await fetch(API + "?action=uploadPayment", {
-//                     method: 'POST',
-//                     mode: 'no-cors',
-//                     body: JSON.stringify(payload)
-//                 });
-
-//                 // SUCCESS REDIRECT TO WHATSAPP
-//                 const msg = `Hi, I have uploaded the payment proof for Order: ${orderId}. Please verify!`;
-//                 alert("Upload Successful! Opening WhatsApp for final confirmation.");
-//                 window.location.href = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(msg)}`;
-
-//             } catch (e) {
-//                 console.error(e);
-//                 alert("Upload complete! Please check with the restaurant.");
-//                 location.reload();
-//             }
-//         };
-//     };
-// }
 // Add 'receiptMsg' as the 4th argument
 async function submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg) {
     const reader = new FileReader();
@@ -560,22 +536,7 @@ async function submitPaymentProof(orderId, file, hotelWhatsApp, receiptMsg) {
     };
 }
 //--------------------------------------------------------------------------------------------------------------------------------------------------------
-// async function handlePaymentSubmission(orderId, hotelWhatsApp) {
-//     const fileInput = document.getElementById('screenshotInput');
-//     const file = fileInput.files[0];
 
-//     if (!file) {
-//         alert("Please select a screenshot first!");
-//         return;
-//     }
-
-//     const btn = document.getElementById("submitPayBtn");
-//     btn.disabled = true;
-//     btn.innerText = "Uploading... Please Wait";
-
-//     // Call the uploader
-//     submitPaymentProof(orderId, file, hotelWhatsApp);
-// }
   async function handlePaymentSubmission(orderId, hotelWhatsApp, name, phone, amount, items) {
     const fileInput = document.getElementById('screenshotInput');
     const file = fileInput.files[0];
