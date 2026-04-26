@@ -137,7 +137,7 @@ function changeQty(index, amount) {
 // 3. FINAL ORDER & WHATSAPP
 // -------------------------------
 
-// function placeFinalOrder() {
+//  function placeFinalOrder() {
 //     const name = document.getElementById("cust_name").value;
 //     const phone = document.getElementById("cust_phone").value;
 //     const note = document.getElementById("cust_note").value;
@@ -159,7 +159,6 @@ function changeQty(index, amount) {
 
 //     out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Sending your order... 🚀</p></div>`;
 
-//     // POST request specifically formatted for Google Apps Script
 //     fetch(API + "?action=createOrder", {
 //         method: "POST",
 //         body: JSON.stringify({
@@ -175,7 +174,8 @@ function changeQty(index, amount) {
 //     .then(r => r.json())
 //     .then(res => {
 //         if (res.success) {
-//             showPaymentForm(res.order_id, totalAmount, hotelWhatsApp);
+//             // 🟢 PASS NAME AND PHONE HERE
+//             showPaymentForm(res.order_id, totalAmount, hotelWhatsApp, name, phone, itemsString);
 //             cart = []; 
 //         } else { 
 //             alert("Error placing order: " + (res.error || "Unknown error")); 
@@ -188,28 +188,37 @@ function changeQty(index, amount) {
 //         checkout(); 
 //     });
 // }
- function placeFinalOrder() {
+async function placeFinalOrder() {
     const name = document.getElementById("cust_name").value;
     const phone = document.getElementById("cust_phone").value;
     const note = document.getElementById("cust_note").value;
     const payMode = document.getElementById("pay_mode").value;
+    const fileInput = document.getElementById("screenshotInput"); // Ensure you added this to checkout UI or handle it here
 
     if (!name || !phone) { alert("Please enter name and phone!"); return; }
 
+    // 1. Capture and Convert Image to Base64 (If user selected one)
+    let base64String = "";
+    if (fileInput && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        base64String = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result.split(",")[1]);
+            reader.readAsDataURL(file);
+        });
+    }
+
     const btn = document.getElementById("finalOrderBtn");
-    if(btn) { btn.disabled = true; btn.innerText = "Processing..."; }
+    if(btn) { btn.disabled = true; btn.innerText = "Uploading & Ordering..."; }
 
-    localStorage.setItem("user_name", name);
-    localStorage.setItem("user_phone", phone);
-
-    const out = document.getElementById("out");
     const selectedRestaurantId = sessionStorage.getItem("current_res_id");
-    const hotelWhatsApp = sessionStorage.getItem("current_res_wa") || "910000000000";
     const itemsString = cart.map(item => `${item.qty}x ${item.name}`).join(", ");
     const totalAmount = cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
 
-    out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Sending your order... 🚀</p></div>`;
+    const out = document.getElementById("out");
+    out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Processing Order & Payment... 🚀</p></div>`;
 
+    // 2. Send EVERYTHING in one request
     fetch(API + "?action=createOrder", {
         method: "POST",
         body: JSON.stringify({
@@ -219,25 +228,25 @@ function changeQty(index, amount) {
             customer_name: name,
             customer_phone: phone,
             payment_mode: payMode,  
-            notes: note  
+            notes: note,
+            file: base64String // 🟢 Image sent inside the order!
         })
     })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            // 🟢 PASS NAME AND PHONE HERE
-            showPaymentForm(res.order_id, totalAmount, hotelWhatsApp, name, phone, itemsString);
+            out.innerHTML = `<div style="text-align:center; padding:50px;"><h2>Order Success! ✅</h2><p>Order ID: ${res.order_id}</p></div>`;
             cart = []; 
+            // 3. Open WhatsApp immediately
+            const hotelWhatsApp = sessionStorage.getItem("current_res_wa");
+            const msg = `*NEW ORDER:* ${res.order_id}\n*Total:* ₹${totalAmount}\n*Items:* ${itemsString}`;
+            window.location.href = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(msg)}`;
         } else { 
-            alert("Error placing order: " + (res.error || "Unknown error")); 
+            alert("Error: " + res.error);
             checkout(); 
         }
     })
-    .catch(err => { 
-        console.error("Order Fetch Error:", err); 
-        alert("Server connection failed. Please try again.");
-        checkout(); 
-    });
+    .catch(err => { alert("Server Error"); checkout(); });
 }
 // ----------------------------------------------------------------------------------------------
 // 4. GEOLOCATION & LISTING
