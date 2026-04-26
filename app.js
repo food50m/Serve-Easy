@@ -82,6 +82,27 @@ function checkout() {
     if (document.getElementById("cart-bar")) document.getElementById("cart-bar").style.display = 'none';
 
     let total = cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
+  //old
+    // let html = `
+    //     <div style="padding: 10px;">
+    //         <h2 style="color: var(--primary); text-align: center;">Finalize Order</h2>
+    //         <div style="background: white; border-radius: 15px; padding: 15px; box-shadow: var(--shadow); margin-bottom: 15px;">
+    //             <p style="font-weight:bold; color:var(--text-light); margin-top:0; margin-bottom:10px;">Contact Details</p>
+    //             <input id="cust_name" type="text" placeholder="Your Name" value="${oldName}" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #eee; border-radius:10px; box-sizing:border-box;">
+    //             <input id="cust_phone" type="tel" placeholder="Mobile Number" value="${oldPhone}" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #eee; border-radius:10px; box-sizing:border-box;">
+    //             <textarea id="cust_note" placeholder="Special Instructions (Optional)" style="width:100%; padding:12px; border:1px solid #eee; border-radius:10px; box-sizing:border-box; height: 60px; font-family: inherit; margin-bottom:10px;">${oldNote}</textarea>
+    //             <p style="font-weight:bold; color:var(--text-light); margin-bottom:8px;">Select Payment Mode:</p>
+    //             <select id="pay_mode" style="width:100%; padding:12px; border:1px solid #eee; border-radius:10px; background:#f8fafc; font-weight:600; cursor:pointer;">
+    //                     <option value="Online">📲 Online (GPay/PhonePe)</option>
+    //             </select>
+    //         </div>
+    //         <div style="background: white; border-radius: 15px; padding: 15px; box-shadow: var(--shadow);">
+    //             <p style="font-weight:bold; color:var(--text-light); margin-top:0;">Order Summary</p>
+    // `;
+//NEW
+  / ... inside checkout() function ...
+// Replace the block where you define payment mode and the summary with this:
+
     let html = `
         <div style="padding: 10px;">
             <h2 style="color: var(--primary); text-align: center;">Finalize Order</h2>
@@ -90,15 +111,19 @@ function checkout() {
                 <input id="cust_name" type="text" placeholder="Your Name" value="${oldName}" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #eee; border-radius:10px; box-sizing:border-box;">
                 <input id="cust_phone" type="tel" placeholder="Mobile Number" value="${oldPhone}" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #eee; border-radius:10px; box-sizing:border-box;">
                 <textarea id="cust_note" placeholder="Special Instructions (Optional)" style="width:100%; padding:12px; border:1px solid #eee; border-radius:10px; box-sizing:border-box; height: 60px; font-family: inherit; margin-bottom:10px;">${oldNote}</textarea>
+                
                 <p style="font-weight:bold; color:var(--text-light); margin-bottom:8px;">Select Payment Mode:</p>
                 <select id="pay_mode" style="width:100%; padding:12px; border:1px solid #eee; border-radius:10px; background:#f8fafc; font-weight:600; cursor:pointer;">
                         <option value="Online">📲 Online (GPay/PhonePe)</option>
                 </select>
-            </div>
-            <div style="background: white; border-radius: 15px; padding: 15px; box-shadow: var(--shadow);">
-                <p style="font-weight:bold; color:var(--text-light); margin-top:0;">Order Summary</p>
-    `;
 
+                <div id="upload-section" style="margin-top: 15px; padding: 10px; border: 2px dashed #ddd; border-radius: 10px;">
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">Upload Payment Screenshot:</p>
+                    <input type="file" id="screenshotInput" accept="image/*" style="width: 100%; font-size: 0.8rem;">
+                </div>
+            </div>
+    `;
+// ... (rest of your checkout HTML) ...
     cart.forEach((item, index) => {
         html += `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #fafafa; padding-bottom: 8px;">
@@ -126,7 +151,7 @@ function checkout() {
         </div>`;
     out.innerHTML = html;
 }
-
+//---------------------------------------------------------------------------
 function changeQty(index, amount) {
     cart[index].qty += amount;
     if (cart[index].qty <= 0) cart.splice(index, 1);
@@ -193,32 +218,38 @@ async function placeFinalOrder() {
     const phone = document.getElementById("cust_phone").value;
     const note = document.getElementById("cust_note").value;
     const payMode = document.getElementById("pay_mode").value;
-    const fileInput = document.getElementById("screenshotInput"); // Ensure you added this to checkout UI or handle it here
+    const fileInput = document.getElementById("screenshotInput");
 
     if (!name || !phone) { alert("Please enter name and phone!"); return; }
 
-    // 1. Capture and Convert Image to Base64 (If user selected one)
-    let base64String = "";
-    if (fileInput && fileInput.files[0]) {
+    // Check if Online payment is selected but no file is uploaded
+    if (payMode === "Online" && (!fileInput.files || !fileInput.files[0])) {
+        alert("Please upload your payment screenshot first!");
+        return;
+    }
+
+    const btn = document.getElementById("finalOrderBtn");
+    if(btn) { btn.disabled = true; btn.innerText = "Processing Order..."; }
+
+    // 🟢 Convert file to Base64
+    let base64File = "";
+    if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
-        base64String = await new Promise((resolve) => {
+        base64File = await new Promise((resolve) => {
             const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result.split(",")[1]);
+            reader.onload = (e) => resolve(e.target.result.split(',')[1]); // Just get the base64 part
             reader.readAsDataURL(file);
         });
     }
 
-    const btn = document.getElementById("finalOrderBtn");
-    if(btn) { btn.disabled = true; btn.innerText = "Uploading & Ordering..."; }
-
     const selectedRestaurantId = sessionStorage.getItem("current_res_id");
+    const hotelWhatsApp = sessionStorage.getItem("current_res_wa") || "910000000000";
     const itemsString = cart.map(item => `${item.qty}x ${item.name}`).join(", ");
     const totalAmount = cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
 
     const out = document.getElementById("out");
-    out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Processing Order & Payment... 🚀</p></div>`;
+    out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Sending your order and proof... 🚀</p></div>`;
 
-    // 2. Send EVERYTHING in one request
     fetch(API + "?action=createOrder", {
         method: "POST",
         body: JSON.stringify({
@@ -229,24 +260,27 @@ async function placeFinalOrder() {
             customer_phone: phone,
             payment_mode: payMode,  
             notes: note,
-            file: base64String // 🟢 Image sent inside the order!
+            file: base64File // 🟢 Image is sent here!
         })
     })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            out.innerHTML = `<div style="text-align:center; padding:50px;"><h2>Order Success! ✅</h2><p>Order ID: ${res.order_id}</p></div>`;
-            cart = []; 
-            // 3. Open WhatsApp immediately
-            const hotelWhatsApp = sessionStorage.getItem("current_res_wa");
-            const msg = `*NEW ORDER:* ${res.order_id}\n*Total:* ₹${totalAmount}\n*Items:* ${itemsString}`;
+            alert("Order Placed Successfully!");
+            // Open WhatsApp with order details
+            const msg = `*NEW ORDER:* ${res.order_id}\n*Total:* ₹${totalAmount}\n*Items:* ${itemsString}\n*Payment:* Screenshot Uploaded`;
             window.location.href = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(msg)}`;
+            cart = []; 
         } else { 
             alert("Error: " + res.error);
             checkout(); 
         }
     })
-    .catch(err => { alert("Server Error"); checkout(); });
+    .catch(err => {
+        console.error(err);
+        alert("Server connection failed.");
+        checkout();
+    });
 }
 // ----------------------------------------------------------------------------------------------
 // 4. GEOLOCATION & LISTING
