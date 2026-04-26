@@ -73,6 +73,61 @@ function updateCartUI() {
 // 2. CHECKOUT & PAYMENT SELECTION
 // -------------------------------
 
+// function checkout() {
+//     const out = document.getElementById("out");
+//     const oldName = document.getElementById("cust_name")?.value || localStorage.getItem("user_name") || "";
+//     const oldPhone = document.getElementById("cust_phone")?.value || localStorage.getItem("user_phone") || "";
+//     const oldNote = document.getElementById("cust_note")?.value || "";
+
+//     if (document.getElementById("cart-bar")) document.getElementById("cart-bar").style.display = 'none';
+
+//     let total = cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
+ 
+//     let html = `
+//         <div style="padding: 10px;">
+//             <h2 style="color: var(--primary); text-align: center;">Finalize Order</h2>
+//             <div style="background: white; border-radius: 15px; padding: 15px; box-shadow: var(--shadow); margin-bottom: 15px;">
+//                 <p style="font-weight:bold; color:var(--text-light); margin-top:0; margin-bottom:10px;">Contact Details</p>
+//                 <input id="cust_name" type="text" placeholder="Your Name" value="${oldName}" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #eee; border-radius:10px; box-sizing:border-box;">
+//                 <input id="cust_phone" type="tel" placeholder="Mobile Number" value="${oldPhone}" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #eee; border-radius:10px; box-sizing:border-box;">
+//                 <textarea id="cust_note" placeholder="Special Instructions (Optional)" style="width:100%; padding:12px; border:1px solid #eee; border-radius:10px; box-sizing:border-box; height: 60px; font-family: inherit; margin-bottom:10px;">${oldNote}</textarea>
+//                 <p style="font-weight:bold; color:var(--text-light); margin-bottom:8px;">Select Payment Mode:</p>
+//                 <select id="pay_mode" style="width:100%; padding:12px; border:1px solid #eee; border-radius:10px; background:#f8fafc; font-weight:600; cursor:pointer;">
+//                         <option value="Online">📲 Online (GPay/PhonePe)</option>
+//                 </select>
+//             </div>
+//             <div style="background: white; border-radius: 15px; padding: 15px; box-shadow: var(--shadow);">
+//                 <p style="font-weight:bold; color:var(--text-light); margin-top:0;">Order Summary</p>
+//     `;
+
+// // Replace the block where you define payment mode and the summary with this:
+//     cart.forEach((item, index) => {
+//         html += `
+//             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #fafafa; padding-bottom: 8px;">
+//                 <div style="flex: 1;">
+//                     <div style="font-weight:600;">${item.name}</div>
+//                     <div style="font-size: 0.9rem; color: var(--primary);">₹${item.price}</div>
+//                 </div>
+//                 <div style="display: flex; align-items: center; gap: 10px;">
+//                     <button onclick="changeQty(${index}, -1)" style="width:28px; height:28px; border-radius:50%; border:1px solid #ddd; background:white;">-</button>
+//                     <span style="font-weight:bold;">${item.qty}</span>
+//                     <button onclick="changeQty(${index}, 1)" style="width:28px; height:28px; border-radius:50%; border:1px solid #ddd; background:white;">+</button>
+//                 </div>
+//             </div>`;
+//     });
+
+//     html += `
+//                 <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 1.2rem; font-weight: 900; color: var(--primary);">
+//                     <span>Total:</span><span>₹${total}</span>
+//                 </div>
+//             </div>
+//             <button id="finalOrderBtn" onclick="placeFinalOrder()" style="margin-top: 25px; width: 100%; padding: 18px; background: #22c55e; color: white; border: none; border-radius: 16px; font-weight: 800; font-size: 1.1rem; cursor: pointer;">
+//                 Confirm Order ✅
+//             </button>
+//             <button onclick="viewCart()" style="margin-top: 15px; width: 100%; background:none; border:none; color:gray; cursor:pointer; font-weight:600;">⬅ Edit Items</button>
+//         </div>`;
+//     out.innerHTML = html;
+// }
 function checkout() {
     const out = document.getElementById("out");
     const oldName = document.getElementById("cust_name")?.value || localStorage.getItem("user_name") || "";
@@ -82,26 +137,6 @@ function checkout() {
     if (document.getElementById("cart-bar")) document.getElementById("cart-bar").style.display = 'none';
 
     let total = cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
-  //old
-    // let html = `
-    //     <div style="padding: 10px;">
-    //         <h2 style="color: var(--primary); text-align: center;">Finalize Order</h2>
-    //         <div style="background: white; border-radius: 15px; padding: 15px; box-shadow: var(--shadow); margin-bottom: 15px;">
-    //             <p style="font-weight:bold; color:var(--text-light); margin-top:0; margin-bottom:10px;">Contact Details</p>
-    //             <input id="cust_name" type="text" placeholder="Your Name" value="${oldName}" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #eee; border-radius:10px; box-sizing:border-box;">
-    //             <input id="cust_phone" type="tel" placeholder="Mobile Number" value="${oldPhone}" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #eee; border-radius:10px; box-sizing:border-box;">
-    //             <textarea id="cust_note" placeholder="Special Instructions (Optional)" style="width:100%; padding:12px; border:1px solid #eee; border-radius:10px; box-sizing:border-box; height: 60px; font-family: inherit; margin-bottom:10px;">${oldNote}</textarea>
-    //             <p style="font-weight:bold; color:var(--text-light); margin-bottom:8px;">Select Payment Mode:</p>
-    //             <select id="pay_mode" style="width:100%; padding:12px; border:1px solid #eee; border-radius:10px; background:#f8fafc; font-weight:600; cursor:pointer;">
-    //                     <option value="Online">📲 Online (GPay/PhonePe)</option>
-    //             </select>
-    //         </div>
-    //         <div style="background: white; border-radius: 15px; padding: 15px; box-shadow: var(--shadow);">
-    //             <p style="font-weight:bold; color:var(--text-light); margin-top:0;">Order Summary</p>
-    // `;
-//NEW
-  / ... inside checkout() function ...
-// Replace the block where you define payment mode and the summary with this:
 
     let html = `
         <div style="padding: 10px;">
@@ -114,16 +149,18 @@ function checkout() {
                 
                 <p style="font-weight:bold; color:var(--text-light); margin-bottom:8px;">Select Payment Mode:</p>
                 <select id="pay_mode" style="width:100%; padding:12px; border:1px solid #eee; border-radius:10px; background:#f8fafc; font-weight:600; cursor:pointer;">
-                        <option value="Online">📲 Online (GPay/PhonePe)</option>
+                    <option value="Online">📲 Online (GPay/PhonePe)</option>
                 </select>
 
-                <div id="upload-section" style="margin-top: 15px; padding: 10px; border: 2px dashed #ddd; border-radius: 10px;">
-                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">Upload Payment Screenshot:</p>
+                <div id="upload-section" style="margin-top: 15px; padding: 12px; border: 2px dashed #22c55e; border-radius: 10px; background: #f0fdf4;">
+                    <p style="font-size: 0.85rem; font-weight:bold; color: #166534; margin-bottom: 5px;">📸 Upload Payment Screenshot:</p>
                     <input type="file" id="screenshotInput" accept="image/*" style="width: 100%; font-size: 0.8rem;">
                 </div>
             </div>
+            <div style="background: white; border-radius: 15px; padding: 15px; box-shadow: var(--shadow);">
+                <p style="font-weight:bold; color:var(--text-light); margin-top:0;">Order Summary</p>
     `;
-// ... (rest of your checkout HTML) ...
+
     cart.forEach((item, index) => {
         html += `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #fafafa; padding-bottom: 8px;">
@@ -222,23 +259,36 @@ async function placeFinalOrder() {
 
     if (!name || !phone) { alert("Please enter name and phone!"); return; }
 
-    // Check if Online payment is selected but no file is uploaded
     if (payMode === "Online" && (!fileInput.files || !fileInput.files[0])) {
         alert("Please upload your payment screenshot first!");
         return;
     }
 
     const btn = document.getElementById("finalOrderBtn");
-    if(btn) { btn.disabled = true; btn.innerText = "Processing Order..."; }
+    if(btn) { btn.disabled = true; btn.innerText = "Uploading Proof..."; }
 
-    // 🟢 Convert file to Base64
+    // 🟢 Convert and Compress file to Base64
     let base64File = "";
     if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         base64File = await new Promise((resolve) => {
             const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result.split(',')[1]); // Just get the base64 part
             reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; // Resize to max 800px width
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    // Export as JPEG with 0.7 quality to save space
+                    resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
+                };
+            };
         });
     }
 
@@ -248,7 +298,7 @@ async function placeFinalOrder() {
     const totalAmount = cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
 
     const out = document.getElementById("out");
-    out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Sending your order and proof... 🚀</p></div>`;
+    out.innerHTML = `<div style="text-align:center; padding:50px;"><p>Sending your order... 🚀</p></div>`;
 
     fetch(API + "?action=createOrder", {
         method: "POST",
@@ -260,15 +310,16 @@ async function placeFinalOrder() {
             customer_phone: phone,
             payment_mode: payMode,  
             notes: note,
-            file: base64File // 🟢 Image is sent here!
+            file: base64File
         })
     })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            alert("Order Placed Successfully!");
-            // Open WhatsApp with order details
-            const msg = `*NEW ORDER:* ${res.order_id}\n*Total:* ₹${totalAmount}\n*Items:* ${itemsString}\n*Payment:* Screenshot Uploaded`;
+            localStorage.setItem("user_name", name);
+            localStorage.setItem("user_phone", phone);
+            
+            const msg = `*NEW ORDER:* ${res.order_id}\n*Customer:* ${name}\n*Items:* ${itemsString}\n*Total:* ₹${totalAmount}\n*Status:* Payment Screenshot Uploaded`;
             window.location.href = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(msg)}`;
             cart = []; 
         } else { 
