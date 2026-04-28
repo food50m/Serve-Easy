@@ -41,13 +41,13 @@ function updateCartUI() {
         cartBar = document.createElement("div");
         cartBar.id = "cart-bar";
         cartBar.style = `
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            position: relative; bottom: 10px auto 20px auto; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 500px; background: #1e293b; color: white;
             padding: 15px 20px; border-radius: 20px; display: flex;
             justify-content: space-between; align-items: center;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000;
         `;
-        document.body.appendChild(cartBar);
+        document.body.getElementById("out").appendChild(cartBar);
     }
 
     const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -491,9 +491,14 @@ function renderMenuItems(hotelName, items) {
     }
     // --- END FIX ---
 
-    let html = `<div style="text-align:center; padding: 10px;"><h2 style="color: var(--primary);">${hotelName}</h2></div>`;
-    
-    // We use cleanItems here to guarantee .forEach works
+    let html = `<div style="text-align:center; padding: 10px;"><h2 style="color: var(--primary);">${hotelName}</h2>
+     <p style="font-weight: bold; color: #475569; margin-top: 0; margin-bottom: 5px;">
+                pay on this number: <span style="color: #22c55e;">${hotelWA}</span>
+            </p>
+            <p style="font-size: 0.85rem; color: #64748b; margin-top: 0;">
+                (Kindly upload the screenshot after payment on next screen)
+            </p></div>`;
+        // We use cleanItems here to guarantee .forEach works
     cleanItems.forEach(item => {
         const status = (item.status || "").toLowerCase();
         const isSoldOut = status === "sold out";
