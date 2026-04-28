@@ -319,7 +319,7 @@ async function placeFinalOrder() {
             localStorage.setItem("user_name", name);
             localStorage.setItem("user_phone", phone);
             
-            const msg = `*NEW ORDER:* ${res.order_id}\n*Customer:* ${name}\n*Items:* ${itemsString}\n*Total:* ₹${totalAmount}\n*Status:* Payment Screenshot Uploaded`;
+            const msg = `*NEW ORDER:* ${res.order_id}\n*Customer:* ${name}\n*Mobile:* ${phone}\n*Items:* ${itemsString}\n*Total:* ₹${totalAmount}\n*Status:* Payment Screenshot Uploaded`;
             window.location.href = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(msg)}`;
             cart = []; 
         } else { 
