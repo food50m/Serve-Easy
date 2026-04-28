@@ -47,7 +47,7 @@ function updateCartUI() {
             justify-content: space-between; align-items: center;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000;
         `;
-        document.body.getElementById("out").appendChild(cartBar);
+        document.getElementById("out").appendChild(cartBar);
     }
 
     const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
