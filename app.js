@@ -478,7 +478,7 @@ function openMenu(id, name) {
 //-------------------------------------------------------------------------------------------------------
 function renderMenuItems(hotelName, items) {
     const out = document.getElementById("out");
-
+const hotelWA = sessionStorage.getItem("current_res_wa") || "Contact Support";
     // --- THE "WORK AT ANY COST" FIX ---
     // This handles every possible way Google Script might be breaking the data.
     let cleanItems = [];
