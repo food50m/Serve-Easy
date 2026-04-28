@@ -41,13 +41,14 @@ function updateCartUI() {
         cartBar = document.createElement("div");
         cartBar.id = "cart-bar";
         cartBar.style = `
-            position: relative; bottom: 10px auto 20px auto; left: 50%; transform: translateX(-50%);
+            position: fixed; 
+            bottom: 20px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 500px; background: #1e293b; color: white;
             padding: 15px 20px; border-radius: 20px; display: flex;
             justify-content: space-between; align-items: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 9999;
         `;
-        document.getElementById("out").appendChild(cartBar);
+        document.body.appendChild(cartBar);
     }
 
     const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -535,7 +536,7 @@ const hotelWA = sessionStorage.getItem("current_res_wa") || "Contact Support";
 
     html += `
         <button onclick="closeMenu()" style="margin-top: 20px; width: 100%; padding: 18px; background: #1e293b; color: white; border-radius: 16px; border: none; font-weight: bold; cursor: pointer;">⬅ Back to Hotels</button>
-        <div style="height:100px;"></div>`;
+        <div style="height:120px;"></div>`;
     out.innerHTML = html;
 }
 // -------------------------------
