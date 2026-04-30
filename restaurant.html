@@ -88,30 +88,42 @@
             if(tab === 'menu') loadMenu();
         }
 
-        function loadOrders() {
-            fetch(API, { method: "POST", body: JSON.stringify({ action: "getOrders", restaurant_id: rid }) })
-            .then(r => r.json()).then(orders => {
-                const list = document.getElementById("list");
-                list.innerHTML = orders.length ? "" : "No orders";
-                orders.forEach(o => {
-                    list.innerHTML += `
-                    <div class="card">
-                        <div class="row"><small>#${o.order_id}</small><b style="color:var(--primary);">₹${o.total_price}</b></div>
-                        <div><b>${o.customer_name}</b></div>
-                        <div style="color:#3b82f6;">📞 ${o.customer_phone}</div>
-                        <div style="font-size:13px; margin:10px 0; background:#f1f5f9; padding:8px;">${o.items}</div>
-                        <select onchange="updateStatus('${o.order_id}', this.value)">
-                            <option value="Pending" ${o.status=='Pending'?'selected':''}>⏳ Pending</option>
-                            <option value="Accepted" ${o.status=='Accepted'?'selected':''}>✅ Accepted</option>
-                            <option value="Preparing" ${o.status=='Preparing'?'selected':''}>👨‍🍳 Preparing</option>
-                            <option value="Ready" ${o.status=='Ready'?'selected':''}>📦 Ready</option>
-                            <option value="Completed" ${o.status=='Completed'?'selected':''}>🏁 Completed</option>
-                            <option value="Cancelled" ${o.status=='Cancelled'?'selected':''}>❌ Cancelled</option>
-                        </select>
-                    </div>`;
-                });
-            });
-        }
+       function loadOrders() {
+    fetch(API, { method: "POST", body: JSON.stringify({ action: "getOrders", restaurant_id: rid }) })
+    .then(r => r.json()).then(orders => {
+        const list = document.getElementById("list");
+        list.innerHTML = orders.length ? "" : "No orders";
+        orders.forEach(o => {
+            // Create a link if the screenshot URL exists
+            const screenshotHtml = o.screenshot 
+                ? `<div style="margin: 10px 0;">
+                     <a href="${o.screenshot}" target="_blank" style="color: #22c55e; font-weight: bold;">
+                        🖼️ View Payment Screenshot
+                     </a>
+                   </div>` 
+                : `<div style="color: #94a3b8; font-size: 12px; margin: 10px 0;">No screenshot uploaded</div>`;
+
+            list.innerHTML += `
+            <div class="card">
+                <div class="row"><small>#${o.order_id}</small><b style="color:var(--primary);">₹${o.total_price}</b></div>
+                <div><b>${o.customer_name}</b></div>
+                <div style="color:#3b82f6;">📞 ${o.customer_phone}</div>
+                <div style="font-size:13px; margin:10px 0; background:#f1f5f9; padding:8px;">${o.items}</div>
+                
+                ${screenshotHtml} <!-- Added this line -->
+
+                <select onchange="updateStatus('${o.order_id}', this.value)">
+                    <option value="Pending" ${o.status=='Pending'?'selected':''}>⏳ Pending</option>
+                    <option value="Accepted" ${o.status=='Accepted'?'selected':''}>✅ Accepted</option>
+                    <option value="Preparing" ${o.status=='Preparing'?'selected':''}>👨‍🍳 Preparing</option>
+                    <option value="Ready" ${o.status=='Ready'?'selected':''}>📦 Ready</option>
+                    <option value="Completed" ${o.status=='Completed'?'selected':''}>🏁 Completed</option>
+                    <option value="Cancelled" ${o.status=='Cancelled'?'selected':''}>❌ Cancelled</option>
+                </select>
+            </div>`;
+        });
+    });
+}
 
         function updateStatus(id, s) {
             fetch(API, { method: "POST", body: JSON.stringify({ action: "updateStatus", order_id: id, status: s, restaurant_id: rid }) })
