@@ -319,8 +319,9 @@ async function placeFinalOrder() {
         if (res.success) {
             localStorage.setItem("user_name", name);
             localStorage.setItem("user_phone", phone);
-            
-            const msg = `*NEW ORDER:* ${res.order_id}\n*Customer:* ${name}\n*Mobile:* ${phone}\n*Items:* ${itemsString}\n*Total:* ₹${totalAmount}\n*Status:* Payment Screenshot Uploaded`;
+            // 1. Get the link sent back by the Apps Script
+            const screenshotUrl = res.screenshot_url || "Link Pending";
+            const msg = `*NEW ORDER:* ${res.order_id}\n*Customer:* ${name}\n*Mobile:* ${phone}\n*Items:* ${itemsString}\n*Total:* ₹${totalAmount}\n*Payment Proof:* ${screenshotUrl};
             window.location.href = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(msg)}`;
             cart = []; 
         } else { 
