@@ -11,9 +11,19 @@
         .row { display: flex; justify-content: space-between; align-items: center; }
         .btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
         select { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        /* Style for Menu Management */
         .menu-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        
+        /* Updated Nav Tabs to include the Toggle */
+        .nav-tabs { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+            align-items: center;
+            background: #fff;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
         .nav-tabs button { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; }
         .active-tab { background: var(--primary); color: white; }
     </style>
@@ -31,6 +41,11 @@
             <div class="nav-tabs">
                 <button id="tab-orders" class="active-tab" onclick="switchTab('orders')">Orders</button>
                 <button id="tab-menu" onclick="switchTab('menu')">Manage Menu</button>
+                
+                <label style="font-size: 13px; display: flex; align-items: center; gap: 5px; cursor: pointer; padding-left: 10px; border-left: 1px solid #eee; white-space: nowrap;">
+                    <input type="checkbox" id="toggle-visibility" onchange="toggleRestaurantVisibility(this.checked)">
+                    Close
+                </label>
             </div>
 
             <div id="orders-section">
@@ -49,18 +64,9 @@
             </div>
         </div>
     </div>
-	 <!-- Hide this initially -->
-<div id="visibility-card" class="card" style="display:none; margin-top: 20px;">
-  <h3>Restaurant Visibility</h3>
-  <label>
-    <input type="checkbox" id="toggle-visibility" onchange="toggleRestaurantVisibility(this.checked)">
-    Close Restaurant
-  </label>
-</div>
 
     <script>
-        const API = "https://script.google.com/macros/s/AKfycbyHlQGZlxDZSa1O-UHIc9Ui97BZ2HyUzK81JNwzsPaV_FmIxNcS3k3Vn3CVgD8IGxPd/exec";
-
+        const API = "https://script.google.com/macros/s/AKfycbw-LmdGMwxHNBoRL_Zpvgzag7GkboaetJy8i5NmePCIphxIzOH7Wk1OFWXaxWnLuoVZ/exec";
         let rid = null;
 
         function login() {
@@ -72,11 +78,9 @@
                 rid = d.restaurant_id;
                 document.getElementById("login-box").style.display="none";
                 document.getElementById("panel").style.display="block";
-				 // Show visibility toggle only after login:
-        document.getElementById("visibility-card").style.display = "block";
-                loadOrders(); setInterval(loadOrders, 30000);
-				 // <-- Add this call here
-        loadRestaurantSettings();
+                loadOrders(); 
+                setInterval(loadOrders, 30000);
+                loadRestaurantSettings();
             });
         }
 
@@ -88,51 +92,35 @@
             if(tab === 'menu') loadMenu();
         }
 
-       function loadOrders() {
-    fetch(API, { method: "POST", body: JSON.stringify({ action: "getOrders", restaurant_id: rid }) })
-    .then(r => r.json()).then(orders => {
-        const list = document.getElementById("list");
-        list.innerHTML = orders.length ? "" : "No orders";
-        orders.forEach(o => {
-            // Create a link if the screenshot URL exists
-            const screenshotHtml = o.screenshot 
-                ? `<div style="margin: 10px 0;">
-                     <a href="${o.screenshot}" target="_blank" style="color: #22c55e; font-weight: bold;">
-                        🖼️ View Payment Screenshot
-                     </a>
-                   </div>` 
-                : `<div style="color: #94a3b8; font-size: 12px; margin: 10px 0;">No screenshot uploaded</div>`;
-
-            list.innerHTML += `
-            <div class="card">
-                <div class="row"><small>#${o.order_id}</small><b style="color:var(--primary);">₹${o.total_price}</b></div>
-                <div><b>${o.customer_name}</b></div>
-                <div style="color:#3b82f6;">📞 ${o.customer_phone}</div>
-                <div style="font-size:13px; margin:10px 0; background:#f1f5f9; padding:8px;">${o.items}</div>
-                
-                ${screenshotHtml} <!-- Added this line -->
-
-                <select onchange="updateStatus('${o.order_id}', this.value)">
-                    <option value="Pending" ${o.status=='Pending'?'selected':''}>⏳ Pending</option>
-                    <option value="Accepted" ${o.status=='Accepted'?'selected':''}>✅ Accepted</option>
-                    <option value="Preparing" ${o.status=='Preparing'?'selected':''}>👨‍🍳 Preparing</option>
-                    <option value="Ready" ${o.status=='Ready'?'selected':''}>📦 Ready</option>
-                    <option value="Completed" ${o.status=='Completed'?'selected':''}>🏁 Completed</option>
-                    <option value="Cancelled" ${o.status=='Cancelled'?'selected':''}>❌ Cancelled</option>
-                </select>
-            </div>`;
-        });
-    });
-}
+        function loadOrders() {
+            fetch(API, { method: "POST", body: JSON.stringify({ action: "getOrders", restaurant_id: rid }) })
+            .then(r => r.json()).then(orders => {
+                const list = document.getElementById("list");
+                list.innerHTML = orders.length ? "" : "No orders";
+                orders.forEach(o => {
+                    list.innerHTML += `
+                    <div class="card">
+                        <div class="row"><small>#${o.order_id}</small><b style="color:var(--primary);">₹${o.total_price}</b></div>
+                        <div><b>${o.customer_name}</b></div>
+                        <div style="color:#3b82f6;">📞 ${o.customer_phone}</div>
+                        <div style="font-size:13px; margin:10px 0; background:#f1f5f9; padding:8px;">${o.items}</div>
+                        <select onchange="updateStatus('${o.order_id}', this.value)">
+                            <option value="Pending" ${o.status=='Pending'?'selected':''}>⏳ Pending</option>
+                            <option value="Accepted" ${o.status=='Accepted'?'selected':''}>✅ Accepted</option>
+                            <option value="Preparing" ${o.status=='Preparing'?'selected':''}>👨‍🍳 Preparing</option>
+                            <option value="Ready" ${o.status=='Ready'?'selected':''}>📦 Ready</option>
+                            <option value="Completed" ${o.status=='Completed'?'selected':''}>🏁 Completed</option>
+                            <option value="Cancelled" ${o.status=='Cancelled'?'selected':''}>❌ Cancelled</option>
+                        </select>
+                    </div>`;
+                });
+            });
+        }
 
         function updateStatus(id, s) {
             fetch(API, { method: "POST", body: JSON.stringify({ action: "updateStatus", order_id: id, status: s, restaurant_id: rid }) })
             .then(() => loadOrders());
         }
-
-        // --- NEW MENU MANAGEMENT FUNCTIONS ---
-
-       
 
         function addMenuItem() {
             const name = document.getElementById("m_name").value;
@@ -153,89 +141,77 @@
             }
         }
 		
-		
-		
-function loadMenu() {
-    fetch(API, { method: "POST", body: JSON.stringify({ action: "getMenu", restaurant_id: rid }) })
-    .then(r => r.json()).then(menu => {
-        const mList = document.getElementById("menu-list");
-        mList.innerHTML = "<h3>Current Menu</h3>";
-        menu.forEach(item => {
-            // Using item.status to match your Apps Script logic
-            const isAvailable = String(item.status).toLowerCase() === 'yes';
-            mList.innerHTML += `
-            <div class="menu-item">
-                <span>${item.name} - ₹${item.price}</span>
-                <div>
-                    <button onclick="updatePrice('${item.name}', '${item.price}')">✏️ Edit</button>
-                    <button onclick="toggleItem('${item.name}', '${isAvailable ? 'NO' : 'YES'}')">
-                        ${isAvailable ? '✅ Available' : '❌ Off'}
-                    </button>
-                    <button style="color:red" onclick="deleteItem('${item.name}')">🗑️</button>
-                </div>
-            </div>`;
-        });
-    });
-}
-
-//edit menu 
-		// Function to prompt for a new price and send it to Apps Script
-async function updatePrice(itemName, currentPrice) {
-    const newPrice = prompt(`Enter new price for ${itemName}:`, currentPrice);
-    if (newPrice === null || newPrice === "" || isNaN(newPrice)) return;
-
-    try {
-        const response = await fetch(API, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "editMenuItem",
-                restaurant_id: rid,
-                name: itemName,
-                new_price: parseFloat(newPrice)
-            })
-        });
-        const result = await response.json();
-        if (result.success) {
-            alert("Price updated!");
-            loadMenu(); 
+        function loadMenu() {
+            fetch(API, { method: "POST", body: JSON.stringify({ action: "getMenu", restaurant_id: rid }) })
+            .then(r => r.json()).then(menu => {
+                const mList = document.getElementById("menu-list");
+                mList.innerHTML = "<h3>Current Menu</h3>";
+                menu.forEach(item => {
+                    const isAvailable = String(item.status).toLowerCase() === 'yes';
+                    mList.innerHTML += `
+                    <div class="menu-item">
+                        <span>${item.name} - ₹${item.price}</span>
+                        <div>
+                            <button onclick="updatePrice('${item.name}', '${item.price}')">✏️ Edit</button>
+                            <button onclick="toggleItem('${item.name}', '${isAvailable ? 'NO' : 'YES'}')">
+                                ${isAvailable ? '✅ Available' : '❌ Off'}
+                            </button>
+                            <button style="color:red" onclick="deleteItem('${item.name}')">🗑️</button>
+                        </div>
+                    </div>`;
+                });
+            });
         }
-    } catch (e) { console.error(e); }
-}
-		function toggleRestaurantVisibility(isHidden) {
-  // 'YES' means visible, 'NO' means hidden for API logic
-  const status = isHidden ? 'NO' : 'YES'; 
-  fetch(API, {
-    method: "POST",
-    body: JSON.stringify({ 
-      action: "toggleRestaurant", 
-      restaurant_id: rid, 
-      enabled: status 
-    })
-  })
-  .then(res => res.json())
-  .then(d => {
-    if(d.success) {
-      alert(`Restaurant is now ${isHidden ? "hidden" : "visible"} to customers.`);
-    } else {
-      alert("Failed to update visibility.");
-    }
-  });
-}
-		function loadRestaurantSettings() {
-  fetch(API, {
-    method: "POST",
-    body: JSON.stringify({ action: "getRestaurant", restaurant_id: rid })
-  })
-  .then(r => r.json())
-  .then(res => {
-    if(res.enabled) {
-      document.getElementById("toggle-visibility").checked = res.enabled !== "YES";
-    }
-  });
-}
 
-// Call after login
-//login().then(() => loadRestaurantSettings());
+        async function updatePrice(itemName, currentPrice) {
+            const newPrice = prompt(`Enter new price for ${itemName}:`, currentPrice);
+            if (newPrice === null || newPrice === "" || isNaN(newPrice)) return;
+            try {
+                const response = await fetch(API, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "editMenuItem",
+                        restaurant_id: rid,
+                        name: itemName,
+                        new_price: parseFloat(newPrice)
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert("Price updated!");
+                    loadMenu(); 
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function toggleRestaurantVisibility(isHidden) {
+            const status = isHidden ? 'NO' : 'YES'; 
+            fetch(API, {
+                method: "POST",
+                body: JSON.stringify({ action: "toggleRestaurant", restaurant_id: rid, enabled: status })
+            })
+            .then(res => res.json())
+            .then(d => {
+                if(d.success) {
+                    alert(`Restaurant is now ${isHidden ? "closed" : "open"} to customers.`);
+                } else {
+                    alert("Failed to update visibility.");
+                }
+            });
+        }
+
+        function loadRestaurantSettings() {
+            fetch(API, {
+                method: "POST",
+                body: JSON.stringify({ action: "getRestaurant", restaurant_id: rid })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if(res.enabled) {
+                    document.getElementById("toggle-visibility").checked = res.enabled !== "YES";
+                }
+            });
+        }
     </script>
 </body>
 </html>
